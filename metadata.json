@@ -1,0 +1,6 @@
+{
+  "name": "Duel Arena: Legacy of the Cards",
+  "description": "Videojuego 3D de duelos estratégicos de cartas coleccionables con invocaciones especiales, motor de cadenas, IA táctica de tres niveles, campaña y constructor de mazos.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

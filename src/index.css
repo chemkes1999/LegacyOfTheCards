@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    --font-display: 'Cinzel', Georgia, serif;
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  }
+
+  html,
+  body,
+  #root {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background-color: #090b10;
+    color: #f1f5f9;
+    font-family: var(--font-sans);
+    overflow: hidden;
+  }
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-mono-num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Custom sleek dark scrollbar for deck builder & modals */
+.custom-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scroll::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.45);
+  border-radius: 3px;
+}
+.custom-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 165, 58, 0.65);
+}
+
+@keyframes cutinSlide {
+  0% {
+    opacity: 0;
+    transform: scale(1.16) translateY(16px);
+  }
+  18% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  82% {
+    opacity: 1;
+    transform: scale(1.03) translateY(-2px);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.96) translateY(-10px);
+  }
+}
+
+.animate-cutin {
+  animation: cutinSlide 2.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes lpFlash {
+  0%, 100% { color: inherit; transform: scale(1); }
+  35% { color: #f87171; transform: scale(1.08); }
+}
+
+.animate-lp-hit {
+  animation: lpFlash 0.45s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-cutin,
+  .animate-lp-hit {
+    animation: none !important;
+  }
+}
