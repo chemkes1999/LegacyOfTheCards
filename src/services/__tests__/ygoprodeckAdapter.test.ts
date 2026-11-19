@@ -188,3 +188,35 @@ test('inferCardEffectsFromDescription y registro dinámico de cartas importadas'
   CardManager.registerBulkCatalog([]);
   assert.equal(CardManager.getAll().length, beforeCount);
 });
+
+test('parseYdk y exportYdk: importa y exporta mazos en formato estándar .ydk', async () => {
+  const { exportYdk, parseYdk } = await import('../ydkCodec');
+  const sampleYdk = [
+    '#created by test',
+    '#main',
+    '89631139',
+    '89631139',
+    '46986414',
+    '55144522',
+    '99999999', // unknown ID
+    '#extra',
+    '23995346',
+    '84013237',
+    '!side',
+    '44095762',
+  ].join('\n');
+
+  const parsed = parseYdk(sampleYdk);
+  assert.equal(parsed.mainDeckIds.length, 4);
+  assert.equal(parsed.extraDeckIds.length, 2);
+  assert.deepEqual(parsed.missingYgoIds, [99999999]);
+
+  const exported = exportYdk({
+    name: 'Test YDK',
+    mainDeckIds: parsed.mainDeckIds,
+    extraDeckIds: parsed.extraDeckIds,
+  });
+  assert.equal(exported.skippedCount, 0);
+  assert.ok(exported.content.includes('89631139'));
+  assert.ok(exported.content.includes('23995346'));
+});

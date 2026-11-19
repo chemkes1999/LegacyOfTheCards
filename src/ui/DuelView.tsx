@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ChevronDown,
   ChevronUp,
@@ -22,6 +22,7 @@ import {
   CardInstance,
   DuelPhase,
   DuelState,
+  PlayerId,
 } from '../types/tcg';
 import { CardArtRenderer } from './CardArtRenderer';
 
@@ -36,18 +37,26 @@ interface DuelViewProps {
 }
 
 interface LocalPrompt {
-  kind: 'TRIBUTES' | 'EFFECT_TARGET' | 'ATTACK_TARGET';
+  kind: 'TRIBUTES' | 'EFFECT_TARGET' | 'ATTACK_TARGET' | 'PENDULUM_MULTI' | 'EXTRA_COMBO';
   title: string;
   subtitle: string;
   candidateUids: string[];
-  requiredCount: number;
+  minCount: number;
+  maxCount: number;
   selected: string[];
+  comboOptions?: { label: string; uids: string[] }[];
   onConfirm: (uids: string[]) => void;
+}
+
+interface DamagePopup {
+  id: string;
+  target: PlayerId;
+  amount: number;
 }
 
 const TUTORIAL_STEPS = [
   'Paso 1: Haz clic en un monstruo de Nivel 4 o inferior en tu mano y pulsa "Invocar (ATK)".',
-  'Paso 2: Pulsa "Fase de Batalla" (disponible a partir del Turno 2; puedes terminar el Turno 1 primero).',
+  'Paso 2: Pulsa "Batalla" (disponible a partir del Turno 2; puedes terminar el Turno 1 primero).',
   'Paso 3: Selecciona tu monstruo en el campo y declara un ataque contra el rival.',
   '¡Excelente! Ya dominas el flujo básico. Completa el duelo para ganar.',
 ];
@@ -67,9 +76,48 @@ export const DuelView: React.FC<DuelViewProps> = ({
   const [toast, setToast] = useState<string | null>(null);
   const [localPrompt, setLocalPrompt] = useState<LocalPrompt | null>(null);
 
+  // Master Duel style Phase/Turn Banner + Floating Damage Popups
+  const [phaseBanner, setPhaseBanner] = useState<{ title: string; sub: string; accent: string } | null>(null);
+  const [damagePopups, setDamagePopups] = useState<DamagePopup[]>([]);
+  const seenDamageCueIdsRef = useRef<Set<string>>(new Set());
+  const prevBannerKeyRef = useRef<string>('');
+
   const isPlayerTurn = duel.activePlayer === 'player' && !duel.winner;
   const isMainPhase = isPlayerTurn && (duel.phase === 'MAIN1' || duel.phase === 'MAIN2');
   const isBattlePhase = isPlayerTurn && duel.phase === 'BATTLE';
+
+  useEffect(() => {
+    const key = `${duel.duelId}_${duel.turnNumber}_${duel.activePlayer}_${duel.phase}`;
+    if (prevBannerKeyRef.current === key) return;
+    prevBannerKeyRef.current = key;
+
+    const phaseLabel = DuelManager.getPhaseLabel(duel.phase).toUpperCase();
+    const isPlr = duel.activePlayer === 'player';
+    setPhaseBanner({
+      title: phaseLabel,
+      sub: `${isPlr ? 'TU TURNO' : `TURNO DE ${duel.opponent.name.toUpperCase()}`} · TURNO ${duel.turnNumber}`,
+      accent: duel.phase === 'BATTLE' ? 'border-rose-500/80 text-rose-300' : isPlr ? 'border-sky-400/80 text-sky-300' : 'border-amber-400/80 text-amber-300',
+    });
+    const t = window.setTimeout(() => setPhaseBanner(null), 1250);
+    return () => window.clearTimeout(t);
+  }, [duel.duelId, duel.turnNumber, duel.activePlayer, duel.phase, duel.opponent.name]);
+
+  useEffect(() => {
+    const fresh: DamagePopup[] = [];
+    for (const cue of duel.recentCues) {
+      if (cue.kind !== 'DAMAGE' || !cue.amount || !cue.targetZone) continue;
+      if (seenDamageCueIdsRef.current.has(cue.id)) continue;
+      seenDamageCueIdsRef.current.add(cue.id);
+      fresh.push({ id: cue.id, target: cue.targetZone.owner, amount: cue.amount });
+    }
+    if (fresh.length === 0) return;
+    setDamagePopups((prev) => [...prev, ...fresh]);
+    const t = window.setTimeout(() => {
+      const ids = new Set(fresh.map((f) => f.id));
+      setDamagePopups((prev) => prev.filter((p) => !ids.has(p.id)));
+    }, 1450);
+    return () => window.clearTimeout(t);
+  }, [duel.recentCues]);
 
   const selectedInstance: CardInstance | null = useMemo(() => {
     if (!selectedUid) return null;
@@ -119,7 +167,8 @@ export const DuelView: React.FC<DuelViewProps> = ({
         title: `Selecciona ${val.requiredTributes} Tributo(s)`,
         subtitle: `Para Invocar por Sacrificio a ${CardManager.getDef(card.cardId).name}`,
         candidateUids: candidates,
-        requiredCount: val.requiredTributes,
+        minCount: val.requiredTributes,
+        maxCount: val.requiredTributes,
         selected: [],
         onConfirm: (tributes) =>
           runResult(DuelManager.normalSummonOrSet(duel, 'player', card.uid, tributes, position, isSet)),
@@ -153,7 +202,8 @@ export const DuelView: React.FC<DuelViewProps> = ({
         title: `Selecciona Objetivo para ${def.name}`,
         subtitle: eff.description,
         candidateUids: targets,
-        requiredCount: 1,
+        minCount: 1,
+        maxCount: 1,
         selected: [],
         onConfirm: (chosen) =>
           runResult(DuelManager.activateCard(duel, 'player', card.uid, effectIndex, chosen[0])),
@@ -174,9 +224,10 @@ export const DuelView: React.FC<DuelViewProps> = ({
     setLocalPrompt({
       kind: 'ATTACK_TARGET',
       title: `Objetivo de Ataque — ${CardManager.getDef(attacker.cardId).name}`,
-      subtitle: 'Elige qué monstruo rival deseas atacar.',
+      subtitle: 'Elige qué monstruo rival deseas atacar (clic en el campo 3D o abajo).',
       candidateUids: targets,
-      requiredCount: 1,
+      minCount: 1,
+      maxCount: 1,
       selected: [],
       onConfirm: (chosen) =>
         runResult(DuelManager.declareAttack(duel, 'player', attacker.uid, chosen[0])),
@@ -185,57 +236,66 @@ export const DuelView: React.FC<DuelViewProps> = ({
 
   const handleExtraDeckSummon = (extraCard: CardInstance) => {
     const def = CardManager.getDef(extraCard.cardId);
+    let combos: CardInstance[][] = [];
+    let method: 'SYNCHRO' | 'XYZ' | 'LINK' | null = null;
+    let errorMsg: string | undefined;
+
     if (def.subtype === 'synchro') {
       const check = SummonManager.validateSynchroSummon(duel, 'player', extraCard.uid);
-      if (!check.canSummon || check.validCombinations.length === 0) {
-        showToast(check.reason ?? 'No cumples los materiales de Sincronía.');
-        return;
-      }
-      runResult(
-        DuelManager.extraSummon(
-          duel,
-          'player',
-          extraCard.uid,
-          check.validCombinations[0].map((m) => m.uid),
-          'SYNCHRO'
-        )
-      );
-      setShowExtraDeck(false);
+      if (check.canSummon) combos = check.validCombinations;
+      else errorMsg = check.reason;
+      method = 'SYNCHRO';
     } else if (def.subtype === 'xyz') {
       const check = SummonManager.validateXyzSummon(duel, 'player', extraCard.uid);
-      if (!check.canSummon || check.validPairs.length === 0) {
-        showToast(check.reason ?? 'No cumples los materiales Xyz.');
-        return;
-      }
-      runResult(
-        DuelManager.extraSummon(
-          duel,
-          'player',
-          extraCard.uid,
-          check.validPairs[0].map((m) => m.uid),
-          'XYZ'
-        )
-      );
-      setShowExtraDeck(false);
+      if (check.canSummon) combos = check.validPairs;
+      else errorMsg = check.reason;
+      method = 'XYZ';
     } else if (def.subtype === 'link') {
       const check = SummonManager.validateLinkSummon(duel, 'player', extraCard.uid);
-      if (!check.canSummon || check.validSets.length === 0) {
-        showToast(check.reason ?? 'No cumples los materiales de Enlace.');
-        return;
-      }
+      if (check.canSummon) combos = check.validSets;
+      else errorMsg = check.reason;
+      method = 'LINK';
+    } else {
+      showToast('Las cartas de Fusión se invocan activando Polimerización desde tu mano.');
+      return;
+    }
+
+    if (!method || combos.length === 0) {
+      showToast(errorMsg ?? 'No cumples los materiales requeridos.');
+      return;
+    }
+
+    setShowExtraDeck(false);
+    if (combos.length === 1) {
       runResult(
         DuelManager.extraSummon(
           duel,
           'player',
           extraCard.uid,
-          check.validSets[0].map((m) => m.uid),
-          'LINK'
+          combos[0].map((m) => m.uid),
+          method
         )
       );
-      setShowExtraDeck(false);
-    } else {
-      showToast('Las cartas de Fusión se invocan activando Polimerización desde tu mano.');
+      return;
     }
+
+    // Multiple valid material combinations -> let the player choose!
+    const allMatUids = Array.from(new Set(combos.flatMap((c) => c.map((m) => m.uid))));
+    onSetTargetableUids(allMatUids);
+    setLocalPrompt({
+      kind: 'EXTRA_COMBO',
+      title: `Materiales para ${def.name}`,
+      subtitle: 'Elige qué combinación de monstruos en tu campo deseas usar como materiales:',
+      candidateUids: allMatUids,
+      minCount: 1,
+      maxCount: 1,
+      selected: [],
+      comboOptions: combos.slice(0, 6).map((grp) => ({
+        label: grp.map((m) => CardManager.getDef(m.cardId).name).join(' + '),
+        uids: grp.map((m) => m.uid),
+      })),
+      onConfirm: (uids) => runResult(DuelManager.extraSummon(duel, 'player', extraCard.uid, uids, method!)),
+    });
   };
 
   const handlePendulumSummon = () => {
@@ -244,8 +304,20 @@ export const DuelView: React.FC<DuelViewProps> = ({
       return;
     }
     const freeSlots = duel.player.monsters.filter((m) => m === null).length;
-    const toSummon = pendulumCheck.eligibleHandUids.slice(0, freeSlots);
-    runResult(DuelManager.pendulumSummon(duel, 'player', toSummon));
+    if (pendulumCheck.eligibleHandUids.length === 1 && freeSlots >= 1) {
+      runResult(DuelManager.pendulumSummon(duel, 'player', pendulumCheck.eligibleHandUids));
+      return;
+    }
+    setLocalPrompt({
+      kind: 'PENDULUM_MULTI',
+      title: `Invocación por Péndulo (Escalas ${pendulumCheck.minLevel}–${pendulumCheck.maxLevel})`,
+      subtitle: `Elige hasta ${freeSlots} monstruo(s) de tu mano para Invocar Especialmente:`,
+      candidateUids: pendulumCheck.eligibleHandUids,
+      minCount: 1,
+      maxCount: freeSlots,
+      selected: pendulumCheck.eligibleHandUids.slice(0, freeSlots),
+      onConfirm: (uids) => runResult(DuelManager.pendulumSummon(duel, 'player', uids)),
+    });
   };
 
   const handlePhaseClick = (target: DuelPhase) => {
@@ -265,6 +337,22 @@ export const DuelView: React.FC<DuelViewProps> = ({
 
   return (
     <div className="fixed inset-0 z-20 pointer-events-none select-none flex flex-col justify-between p-3 sm:p-4">
+      {/* Master Duel style Phase / Turn Banner */}
+      {phaseBanner && (
+        <div className="fixed inset-x-0 top-1/3 z-30 flex justify-center pointer-events-none">
+          <div
+            className={`rounded-xl border-y-2 bg-slate-950/90 px-10 py-3 text-center shadow-2xl backdrop-blur-sm ${phaseBanner.accent}`}
+          >
+            <div className="font-display text-2xl sm:text-3xl font-extrabold tracking-widest">
+              {phaseBanner.title}
+            </div>
+            <div className="text-[11px] font-mono-num tracking-wider text-slate-300 mt-0.5">
+              {phaseBanner.sub}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Projected 3D Monster Badges */}
       <div className="fixed inset-0 pointer-events-none z-10 overflow-hidden">
         {projectedBadges.map((b) => (
@@ -272,12 +360,12 @@ export const DuelView: React.FC<DuelViewProps> = ({
             key={b.uid}
             type="button"
             onClick={() => {
-              if (localPrompt && localPrompt.candidateUids.includes(b.uid)) {
+              if (localPrompt && localPrompt.kind !== 'EXTRA_COMBO' && localPrompt.candidateUids.includes(b.uid)) {
                 const already = localPrompt.selected.includes(b.uid);
                 const nextSel = already
                   ? localPrompt.selected.filter((x) => x !== b.uid)
-                  : [...localPrompt.selected, b.uid].slice(0, localPrompt.requiredCount);
-                if (nextSel.length === localPrompt.requiredCount && localPrompt.requiredCount === 1) {
+                  : [...localPrompt.selected, b.uid].slice(0, localPrompt.maxCount);
+                if (nextSel.length === localPrompt.minCount && localPrompt.maxCount === 1) {
                   localPrompt.onConfirm(nextSel);
                 } else {
                   setLocalPrompt({ ...localPrompt, selected: nextSel });
@@ -316,7 +404,17 @@ export const DuelView: React.FC<DuelViewProps> = ({
       {/* Top HUD Bar */}
       <div className="relative z-20 flex flex-wrap items-start justify-between gap-3 pointer-events-auto">
         {/* Player LP & Info */}
-        <div className="w-60 rounded-xl border border-sky-500/40 bg-slate-950/90 px-3 py-2 shadow-lg">
+        <div className="relative w-60 rounded-xl border border-sky-500/40 bg-slate-950/90 px-3 py-2 shadow-lg">
+          {damagePopups
+            .filter((p) => p.target === 'player')
+            .map((p) => (
+              <div
+                key={p.id}
+                className="pointer-events-none absolute -bottom-7 right-2 font-mono-num text-base font-extrabold text-rose-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] animate-bounce"
+              >
+                -{p.amount} LP
+              </div>
+            ))}
           <div className="flex items-center justify-between text-xs">
             <span className="font-bold text-sky-300 truncate">{duel.player.name}</span>
             <span className="font-mono-num text-base font-extrabold text-white">{duel.player.lp} LP</span>
@@ -357,7 +455,7 @@ export const DuelView: React.FC<DuelViewProps> = ({
                 !isPlayerTurn ||
                 active ||
                 (ph === 'BATTLE' && !canBattle) ||
-                (ph === 'MAIN1') ||
+                ph === 'MAIN1' ||
                 (ph === 'MAIN2' && duel.phase !== 'BATTLE');
               return (
                 <button
@@ -388,7 +486,17 @@ export const DuelView: React.FC<DuelViewProps> = ({
 
         {/* Opponent LP + Utility Buttons */}
         <div className="flex items-start gap-2">
-          <div className="w-60 rounded-xl border border-rose-500/40 bg-slate-950/90 px-3 py-2 shadow-lg">
+          <div className="relative w-60 rounded-xl border border-rose-500/40 bg-slate-950/90 px-3 py-2 shadow-lg">
+            {damagePopups
+              .filter((p) => p.target === 'opponent')
+              .map((p) => (
+                <div
+                  key={p.id}
+                  className="pointer-events-none absolute -bottom-7 left-2 font-mono-num text-base font-extrabold text-amber-300 drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] animate-bounce"
+                >
+                  -{p.amount} LP
+                </div>
+              ))}
             <div className="flex items-center justify-between text-xs">
               <span className="font-bold text-rose-300 truncate">{duel.opponent.name}</span>
               <span className="font-mono-num text-base font-extrabold text-white">{duel.opponent.lp} LP</span>
@@ -524,7 +632,7 @@ export const DuelView: React.FC<DuelViewProps> = ({
                         onClick={() =>
                           runResult(DuelManager.placePendulum(duel, 'player', selectedInstance.uid, 'LEFT'))
                         }
-                        className="rounded-lg bg-emerald-700 hover:bg-emerald-600 py-1.5 text-[11px] font-semibold text-white cursor-pointer"
+                        className="rounded-lg bg-sky-700 hover:bg-sky-600 py-1.5 text-[11px] font-semibold text-white cursor-pointer"
                       >
                         Péndulo Izq ({selectedDef.pendulumScale})
                       </button>
@@ -533,7 +641,7 @@ export const DuelView: React.FC<DuelViewProps> = ({
                         onClick={() =>
                           runResult(DuelManager.placePendulum(duel, 'player', selectedInstance.uid, 'RIGHT'))
                         }
-                        className="rounded-lg bg-emerald-700 hover:bg-emerald-600 py-1.5 text-[11px] font-semibold text-white cursor-pointer"
+                        className="rounded-lg bg-rose-700 hover:bg-rose-600 py-1.5 text-[11px] font-semibold text-white cursor-pointer"
                       >
                         Péndulo Der ({selectedDef.pendulumScale})
                       </button>
@@ -569,7 +677,7 @@ export const DuelView: React.FC<DuelViewProps> = ({
               {/* Field Monster Actions */}
               {(selectedInstance.location === 'MONSTER' || selectedInstance.location === 'EXTRA_MONSTER') && (
                 <>
-                  {isBattlePhase && BattleManager.canDeclareAttack(duel, selectedInstance.uid).allowed ||
+                  {(isBattlePhase && BattleManager.canDeclareAttack(duel, selectedInstance.uid).allowed) ||
                   (isBattlePhase &&
                     selectedInstance.faceUp &&
                     selectedInstance.position === 'ATK' &&
@@ -688,9 +796,9 @@ export const DuelView: React.FC<DuelViewProps> = ({
         </div>
       )}
 
-      {/* Local Selection Prompt (Tributes / Targets) */}
+      {/* Local Selection Prompt (Tributes / Targets / Extra Deck Combos / Pendulum Multi) */}
       {localPrompt && (
-        <div className="fixed inset-x-0 bottom-44 z-30 mx-auto max-w-xl rounded-2xl border-2 border-amber-400/80 bg-slate-950/95 p-4 shadow-2xl pointer-events-auto space-y-3">
+        <div className="fixed inset-x-0 bottom-36 z-30 mx-auto max-w-xl rounded-2xl border-2 border-amber-400/80 bg-slate-950/95 p-4 shadow-2xl pointer-events-auto space-y-3">
           <div className="flex items-start justify-between gap-2">
             <div>
               <h4 className="font-display text-base font-bold text-amber-300">{localPrompt.title}</h4>
@@ -704,46 +812,64 @@ export const DuelView: React.FC<DuelViewProps> = ({
               Cancelar
             </button>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {localPrompt.candidateUids.map((uid) => {
-              const inst = CardManager.findInstance(duel, uid);
-              if (!inst) return null;
-              const def = CardManager.getDef(inst.cardId);
-              const isSel = localPrompt.selected.includes(uid);
-              return (
+
+          {localPrompt.kind === 'EXTRA_COMBO' && localPrompt.comboOptions ? (
+            <div className="space-y-1.5">
+              {localPrompt.comboOptions.map((opt, idx) => (
                 <button
-                  key={uid}
+                  key={idx}
                   type="button"
-                  onClick={() => {
-                    const nextSel = isSel
-                      ? localPrompt.selected.filter((x) => x !== uid)
-                      : [...localPrompt.selected, uid].slice(0, localPrompt.requiredCount);
-                    if (nextSel.length === localPrompt.requiredCount && localPrompt.requiredCount === 1) {
-                      localPrompt.onConfirm(nextSel);
-                    } else {
-                      setLocalPrompt({ ...localPrompt, selected: nextSel });
-                    }
-                  }}
-                  className={`rounded-lg border px-3 py-2 text-xs font-semibold cursor-pointer ${
-                    isSel
-                      ? 'border-amber-400 bg-amber-500 text-slate-950'
-                      : 'border-slate-700 bg-slate-900 text-slate-100 hover:border-amber-400/70'
-                  }`}
+                  onClick={() => localPrompt.onConfirm(opt.uids)}
+                  className="w-full rounded-lg border border-purple-500/50 bg-slate-900 hover:bg-purple-950/70 px-3 py-2 text-left text-xs font-semibold text-purple-100 cursor-pointer"
                 >
-                  {inst.faceUp || inst.controller === 'player' ? def.name : 'Monstruo Oculto'}
+                  {opt.label}
                 </button>
-              );
-            })}
-          </div>
-          {localPrompt.requiredCount > 1 && (
-            <button
-              type="button"
-              disabled={localPrompt.selected.length !== localPrompt.requiredCount}
-              onClick={() => localPrompt.onConfirm(localPrompt.selected)}
-              className="w-full rounded-lg bg-amber-500 hover:bg-amber-400 disabled:opacity-40 py-2 text-xs font-bold text-slate-950 cursor-pointer"
-            >
-              Confirmar ({localPrompt.selected.length}/{localPrompt.requiredCount})
-            </button>
+              ))}
+            </div>
+          ) : (
+            <>
+              <div className="flex flex-wrap gap-2">
+                {localPrompt.candidateUids.map((uid) => {
+                  const inst = CardManager.findInstance(duel, uid);
+                  if (!inst) return null;
+                  const def = CardManager.getDef(inst.cardId);
+                  const isSel = localPrompt.selected.includes(uid);
+                  return (
+                    <button
+                      key={uid}
+                      type="button"
+                      onClick={() => {
+                        const nextSel = isSel
+                          ? localPrompt.selected.filter((x) => x !== uid)
+                          : [...localPrompt.selected, uid].slice(0, localPrompt.maxCount);
+                        if (nextSel.length === localPrompt.minCount && localPrompt.maxCount === 1) {
+                          localPrompt.onConfirm(nextSel);
+                        } else {
+                          setLocalPrompt({ ...localPrompt, selected: nextSel });
+                        }
+                      }}
+                      className={`rounded-lg border px-3 py-2 text-xs font-semibold cursor-pointer ${
+                        isSel
+                          ? 'border-amber-400 bg-amber-500 text-slate-950'
+                          : 'border-slate-700 bg-slate-900 text-slate-100 hover:border-amber-400/70'
+                      }`}
+                    >
+                      {inst.faceUp || inst.controller === 'player' ? def.name : 'Monstruo Oculto'}
+                    </button>
+                  );
+                })}
+              </div>
+              {localPrompt.maxCount > 1 && (
+                <button
+                  type="button"
+                  disabled={localPrompt.selected.length < localPrompt.minCount}
+                  onClick={() => localPrompt.onConfirm(localPrompt.selected)}
+                  className="w-full rounded-lg bg-amber-500 hover:bg-amber-400 disabled:opacity-40 py-2 text-xs font-bold text-slate-950 cursor-pointer"
+                >
+                  Confirmar ({localPrompt.selected.length}/{localPrompt.maxCount})
+                </button>
+              )}
+            </>
           )}
         </div>
       )}
@@ -783,8 +909,14 @@ export const DuelView: React.FC<DuelViewProps> = ({
         </div>
       )}
 
-      {/* Bottom Hand & Extra Deck Dock */}
-      <div className="relative z-20 flex flex-col items-center gap-2 pointer-events-auto">
+      {/* Bottom Hand & Extra Deck Dock (tucks cleanly during field targeting) */}
+      <div
+        className={`relative z-20 flex flex-col items-center gap-2 transition-all duration-200 ${
+          localPrompt && localPrompt.kind !== 'PENDULUM_MULTI'
+            ? 'opacity-30 translate-y-6 pointer-events-none'
+            : 'pointer-events-auto'
+        }`}
+      >
         {showExtraDeck && (
           <div className="w-full max-w-4xl rounded-2xl border border-purple-500/50 bg-slate-950/95 p-3 shadow-2xl space-y-2">
             <div className="flex items-center justify-between text-xs">
@@ -836,16 +968,20 @@ export const DuelView: React.FC<DuelViewProps> = ({
             )}
           </div>
 
-          {/* Player Hand */}
-          <div className="flex items-end gap-2 overflow-x-auto px-2 py-1 max-w-full">
+          {/* Player Hand with Smooth Lift & Hover Zoom */}
+          <div className="flex items-end gap-2 overflow-x-auto px-3 pt-5 pb-1 max-w-full">
             {duel.player.hand.map((card) => (
-              <CardArtRenderer
+              <div
                 key={card.uid}
-                card={CardManager.getDef(card.cardId)}
-                size="sm"
-                selected={selectedUid === card.uid}
-                onClick={() => onSelectUid(selectedUid === card.uid ? null : card.uid)}
-              />
+                className="transition-transform duration-150 hover:-translate-y-4 hover:scale-110 hover:z-30"
+              >
+                <CardArtRenderer
+                  card={CardManager.getDef(card.cardId)}
+                  size="sm"
+                  selected={selectedUid === card.uid}
+                  onClick={() => onSelectUid(selectedUid === card.uid ? null : card.uid)}
+                />
+              </div>
             ))}
           </div>
         </div>

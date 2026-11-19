@@ -361,3 +361,26 @@ test('Regresión Combate: impide atacar desde Cementerio y aborta si una trampa 
   assert.equal(CardManager.findInstance(state, attacker.uid)?.location, 'GRAVEYARD');
 });
 
+test('Mágica de Equipo: revierte bono de ATK al ser destruida', () => {
+  let state = createDeterministicDuel(
+    ['m_ebony_knight', 's_phoenix_blade', 'm_valiant_blade', 'm_tuner_squire', 'm_dawn_mage'],
+    ['m_stone_sentinel', 'm_valiant_blade', 'm_tuner_squire', 'm_dawn_mage', 'm_crimson_elemental']
+  );
+
+  const knight = state.player.hand.find((c) => c.cardId === 'm_ebony_knight')!;
+  const equip = state.player.hand.find((c) => c.cardId === 's_phoenix_blade')!;
+
+  state = DuelManager.normalSummonOrSet(state, 'player', knight.uid, [], 'ATK', false).state;
+  const baseAtk = CardManager.getEffectiveStats(state, CardManager.findInstance(state, knight.uid)!).atk;
+
+  state = DuelManager.activateCard(state, 'player', equip.uid, 0, knight.uid).state;
+  const boostedAtk = CardManager.getEffectiveStats(state, CardManager.findInstance(state, knight.uid)!).atk;
+  assert.ok(boostedAtk > baseAtk, 'Equip should boost monster ATK');
+
+  // Destroy the Equip Spell -> monster ATK must revert back to baseAtk
+  const liveEquip = CardManager.findInstance(state, equip.uid)!;
+  SummonManager.sendToGraveyard(state, liveEquip);
+  const revertedAtk = CardManager.getEffectiveStats(state, CardManager.findInstance(state, knight.uid)!).atk;
+  assert.equal(revertedAtk, baseAtk);
+});
+

@@ -740,10 +740,23 @@ export class DuelArena3D {
     this.selectedUid = selectedUid;
     this.targetableUids = new Set(targetableUids);
 
+    const disposeCardGroup = (group: THREE.Group) => {
+      for (const child of group.children) {
+        if (child instanceof THREE.Mesh && Array.isArray(child.material)) {
+          for (const mat of child.material) {
+            if (mat !== this.cardSideMat) {
+              mat.dispose();
+            }
+          }
+        }
+      }
+      this.scene.remove(group);
+    };
+
     if (!duel) {
       // Clear field cards when returning to menu
       for (const [, entry] of this.cardMeshes) {
-        this.scene.remove(entry.group);
+        disposeCardGroup(entry.group);
         this.interactables = this.interactables.filter((o) => o.parent !== entry.group);
       }
       this.cardMeshes.clear();
@@ -773,7 +786,7 @@ export class DuelArena3D {
     // Remove cards no longer on board
     for (const [uid, entry] of this.cardMeshes.entries()) {
       if (!activeUidSet.has(uid)) {
-        this.scene.remove(entry.group);
+        disposeCardGroup(entry.group);
         this.interactables = this.interactables.filter((o) => !entry.group.children.includes(o));
         this.cardMeshes.delete(uid);
       }

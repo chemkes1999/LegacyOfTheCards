@@ -186,6 +186,8 @@ export interface CardInstance {
   defModifier: number;
   xyzMaterials: CardInstance[];
   equippedToUid?: string;
+  equippedAtkDelta?: number;
+  equippedDefDelta?: number;
   restrictions: ('CANNOT_ATTACK' | 'CANNOT_CHANGE_POS' | 'IMMUNE_DESTROY')[];
   turnPlaced: number;
 }

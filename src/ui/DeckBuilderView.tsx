@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertCircle,
   ArrowLeft,
@@ -6,6 +6,7 @@ import {
   ChevronLeft,
   ChevronRight,
   CopyPlus,
+  Download,
   Layers,
   Minus,
   Plus,
@@ -13,6 +14,7 @@ import {
   Search,
   Star,
   Trash2,
+  Upload,
 } from 'lucide-react';
 import { BALANCED_STARTER_MAIN, STARTER_EXTRA_DECK } from '../data/decks';
 import { CardManager } from '../engine/CardManager';
@@ -23,6 +25,7 @@ import {
   MAIN_DECK_MIN,
   MAX_COPIES_PER_CARD,
 } from '../engine/DeckManager';
+import { exportYdk, parseYdk } from '../services/ydkCodec';
 import { CardCategory, PlayerProfileSave, SavedDeck } from '../types/tcg';
 import { CardArtRenderer } from './CardArtRenderer';
 
@@ -57,6 +60,7 @@ export const DeckBuilderView: React.FC<DeckBuilderViewProps> = ({
   const [category, setCategory] = useState<'ALL' | CardCategory>('ALL');
   const [page, setPage] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
+  const ydkInputRef = useRef<HTMLInputElement | null>(null);
 
   const validation = useMemo(() => DeckManager.validateDeck(editingDeck), [editingDeck]);
   const stats = useMemo(() => DeckManager.computeStats(editingDeck), [editingDeck]);
@@ -111,7 +115,51 @@ export const DeckBuilderView: React.FC<DeckBuilderViewProps> = ({
 
   const showTempNotice = (msg: string) => {
     setNotice(msg);
-    window.setTimeout(() => setNotice((prev) => (prev === msg ? null : prev)), 2400);
+    window.setTimeout(() => setNotice((prev) => (prev === msg ? null : prev)), 3600);
+  };
+
+  const handleImportYdkFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    const text = await file.text();
+    const res = parseYdk(text);
+    if (res.importedCount === 0) {
+      showTempNotice(
+        'No se reconocieron cartas del archivo .ydk. Importa primero el catálogo completo en Biblioteca.'
+      );
+      return;
+    }
+    const cleanName = file.name.replace(/\.ydk$/i, '').trim() || 'Mazo .ydk';
+    const nextDeck: SavedDeck = {
+      id: `deck_ydk_${Date.now()}`,
+      name: cleanName,
+      mainDeckIds: res.mainDeckIds,
+      extraDeckIds: res.extraDeckIds,
+      updatedAt: Date.now(),
+    };
+    setEditingDeck(nextDeck);
+    showTempNotice(
+      res.missingYgoIds.length > 0
+        ? `Importadas ${res.importedCount} cartas (${res.missingYgoIds.length} IDs no encontrados — sincroniza todas en Biblioteca).`
+        : `Mazo "${cleanName}" importado con ${res.importedCount} cartas.`
+    );
+  };
+
+  const handleExportYdk = () => {
+    const { content, skippedCount } = exportYdk(editingDeck);
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${editingDeck.name.replace(/[^a-z0-9_-]/gi, '_') || 'deck'}.ydk`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showTempNotice(
+      skippedCount > 0
+        ? `Exportado .ydk (${skippedCount} cartas originales sin ID YGOPRODeck fueron omitidas).`
+        : `Archivo "${editingDeck.name}.ydk" descargado.`
+    );
   };
 
   const handleSelectDeck = (deckId: string) => {
@@ -190,6 +238,13 @@ export const DeckBuilderView: React.FC<DeckBuilderViewProps> = ({
 
   return (
     <div className="fixed inset-0 z-40 flex flex-col bg-[#070a12]/95 p-4 sm:p-6 overflow-hidden">
+      <input
+        ref={ydkInputRef}
+        type="file"
+        accept=".ydk,text/plain"
+        onChange={handleImportYdkFile}
+        className="hidden"
+      />
       {/* Top Bar */}
       <div className="mx-auto w-full max-w-7xl flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3 shrink-0">
         <div className="flex items-center gap-3">
@@ -217,6 +272,24 @@ export const DeckBuilderView: React.FC<DeckBuilderViewProps> = ({
               </option>
             ))}
           </select>
+
+          <button
+            type="button"
+            onClick={() => ydkInputRef.current?.click()}
+            className="flex items-center gap-1.5 rounded-lg bg-emerald-950/80 border border-emerald-500/40 hover:bg-emerald-900 px-3 py-2 text-xs font-semibold text-emerald-200 cursor-pointer"
+          >
+            <Upload className="h-3.5 w-3.5" />
+            <span>Importar .ydk</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleExportYdk}
+            className="flex items-center gap-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 px-3 py-2 text-xs font-semibold text-slate-100 cursor-pointer"
+          >
+            <Download className="h-3.5 w-3.5" />
+            <span>Exportar .ydk</span>
+          </button>
 
           <button
             type="button"

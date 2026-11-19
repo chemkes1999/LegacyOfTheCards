@@ -305,6 +305,8 @@ export class EffectManager {
             target.defModifier += op.defDelta ?? 0;
             if (sourceCard && def.subtype === 'equip') {
               sourceCard.equippedToUid = target.uid;
+              sourceCard.equippedAtkDelta = (sourceCard.equippedAtkDelta ?? 0) + (op.atkDelta ?? 0);
+              sourceCard.equippedDefDelta = (sourceCard.equippedDefDelta ?? 0) + (op.defDelta ?? 0);
             }
             const tDef = CardManager.getDef(target.cardId);
             const delta = op.atkDelta ?? 0;

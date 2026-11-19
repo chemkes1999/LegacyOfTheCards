@@ -326,6 +326,18 @@ export class SummonManager {
       card.xyzMaterials = [];
     }
 
+    // If this card is an Equip Spell, revert its stat modifiers on the equipped monster
+    if (card.equippedToUid) {
+      const target = CardManager.findInstance(state, card.equippedToUid);
+      if (target) {
+        target.atkModifier -= card.equippedAtkDelta ?? 0;
+        target.defModifier -= card.equippedDefDelta ?? 0;
+      }
+      card.equippedToUid = undefined;
+      card.equippedAtkDelta = undefined;
+      card.equippedDefDelta = undefined;
+    }
+
     const def = CardManager.getDef(card.cardId);
     // Extra Deck monsters return to Extra Deck if sent from field? Standard TCG puts Extra Deck monsters in GY if summoned properly, which allows Monster Reborn!
     card.location = 'GRAVEYARD';
@@ -334,7 +346,6 @@ export class SummonManager {
     card.atkModifier = 0;
     card.defModifier = 0;
     card.restrictions = [];
-    card.equippedToUid = undefined;
     ownerPs.graveyard.push(card);
 
     // Clean up any equips pointing to this card
