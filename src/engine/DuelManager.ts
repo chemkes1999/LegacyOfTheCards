@@ -238,7 +238,18 @@ export class DuelManager {
       return { state };
     }
 
-    const slot = ps.spellsTraps.findIndex((s) => s === null);
+    const findFreeStSlot = (playerState: PlayerState): number => {
+      const order = [1, 2, 3, 0, 4];
+      for (const idx of order) {
+        if (playerState.spellsTraps[idx] !== null) continue;
+        if (idx === 0 && playerState.pendulumLeft) continue;
+        if (idx === 4 && playerState.pendulumRight) continue;
+        return idx;
+      }
+      return -1;
+    };
+
+    const slot = findFreeStSlot(ps);
     if (slot === -1) return { state: prevState, error: 'Tu Zona de Mágicas y Trampas está llena.' };
 
     ps.hand = ps.hand.filter((c) => c.uid !== cardUid);
@@ -299,7 +310,13 @@ export class DuelManager {
         return { state };
       }
 
-      const slot = ps.spellsTraps.findIndex((s) => s === null);
+      const slotOrder = [1, 2, 3, 0, 4];
+      const slot = slotOrder.find((idx) => {
+        if (ps.spellsTraps[idx] !== null) return false;
+        if (idx === 0 && ps.pendulumLeft) return false;
+        if (idx === 4 && ps.pendulumRight) return false;
+        return true;
+      }) ?? -1;
       if (slot === -1) return { state: prevState, error: 'Zona de Mágicas y Trampas llena.' };
       ps.hand = ps.hand.filter((c) => c.uid !== card.uid);
       card.location = 'SPELL_TRAP';

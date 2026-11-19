@@ -62,9 +62,7 @@ const ROW_EMZ = 0;
 const ROW_PLR_M = 2.15;
 const ROW_PLR_ST = 4.25;
 const EMZ_COLS = [-1.9, 1.9];
-const COL_INNER_WING = 5.75;
-const COL_OUTER_WING = 7.65;
-const ROW_PENDULUM = 3.2;
+const COL_SIDE = 5.7;
 
 function makeStoneFloorTexture(palette: 'volcanic' | 'temple'): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
@@ -173,6 +171,80 @@ function makeZoneTileTexture(accent: string, symbol: string): THREE.CanvasTextur
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(symbol, 128, 160);
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+function makePendulumZoneTexture(side: 'LEFT' | 'RIGHT'): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 320;
+  const ctx = canvas.getContext('2d')!;
+
+  const isLeft = side === 'LEFT';
+  const mainColor = isLeft ? '#0ea5e9' : '#e11d48';
+  const lightColor = isLeft ? '#bae6fd' : '#fecdd3';
+  const darkColor = isLeft ? '#082f49' : '#4c0519';
+
+  // Glowing burst background
+  const bg = ctx.createRadialGradient(128, 160, 12, 128, 160, 155);
+  bg.addColorStop(0, lightColor);
+  bg.addColorStop(0.45, mainColor);
+  bg.addColorStop(1, darkColor);
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, 256, 320);
+
+  // Outer border
+  ctx.strokeStyle = mainColor;
+  ctx.lineWidth = 8;
+  ctx.strokeRect(8, 8, 240, 304);
+
+  // Inner bright frame
+  ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(18, 18, 220, 284);
+
+  // Faceted horizontal Pendulum Crystal Diamond (matching Master Rule 4/5 board)
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(128, 102);
+  ctx.lineTo(208, 160);
+  ctx.lineTo(128, 218);
+  ctx.lineTo(48, 160);
+  ctx.closePath();
+  const gemGrad = ctx.createLinearGradient(48, 102, 208, 218);
+  gemGrad.addColorStop(0, lightColor);
+  gemGrad.addColorStop(0.5, mainColor);
+  gemGrad.addColorStop(1, darkColor);
+  ctx.fillStyle = gemGrad;
+  ctx.fill();
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 4;
+  ctx.stroke();
+
+  // Inner facet highlight
+  ctx.beginPath();
+  ctx.moveTo(128, 118);
+  ctx.lineTo(182, 160);
+  ctx.lineTo(128, 152);
+  ctx.lineTo(74, 160);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  ctx.fill();
+  ctx.restore();
+
+  // Top & Bottom zone labels
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 17px Georgia, serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('ZONA DE PÉNDULO', 128, 44);
+
+  ctx.font = 'bold 13px sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.92)';
+  ctx.fillText('MÁGICAS & TRAMPAS', 128, 282);
 
   const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -388,7 +460,7 @@ export class DuelArena3D {
     const oppTex = makeStoneFloorTexture('volcanic');
     oppTex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
     const oppGround = new THREE.Mesh(
-      new THREE.BoxGeometry(18.6, 0.2, 6.2),
+      new THREE.BoxGeometry(15.2, 0.2, 6.2),
       new THREE.MeshStandardMaterial({ map: oppTex, color: 0xffffff, roughness: 0.78, metalness: 0.15 })
     );
     oppGround.position.set(0, -0.11, -3.12);
@@ -399,16 +471,16 @@ export class DuelArena3D {
     const plrTex = makeStoneFloorTexture('temple');
     plrTex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
     const plrGround = new THREE.Mesh(
-      new THREE.BoxGeometry(18.6, 0.2, 6.2),
+      new THREE.BoxGeometry(15.2, 0.2, 6.2),
       new THREE.MeshStandardMaterial({ map: plrTex, color: 0xffffff, roughness: 0.72, metalness: 0.1 })
     );
     plrGround.position.set(0, -0.11, 3.12);
     plrGround.receiveShadow = true;
     this.scene.add(plrGround);
 
-    // Symmetrical Dark Metallic Board Rim
+    // Symmetrical Dark Metallic Board Rim (compact 7-column Master Rule 4/5 frame)
     const boardRim = new THREE.Mesh(
-      new THREE.BoxGeometry(19.1, 0.18, 12.9),
+      new THREE.BoxGeometry(15.7, 0.18, 12.9),
       new THREE.MeshStandardMaterial({ color: 0x161b26, roughness: 0.5, metalness: 0.55 })
     );
     boardRim.position.set(0, -0.16, 0);
@@ -417,57 +489,56 @@ export class DuelArena3D {
 
     // Glowing Midfield Rift Divider
     const divider = new THREE.Mesh(
-      new THREE.BoxGeometry(18.6, 0.04, 0.14),
+      new THREE.BoxGeometry(15.2, 0.04, 0.14),
       new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0ea5e9, emissiveIntensity: 1.8, roughness: 0.2 })
     );
     divider.position.set(0, 0.0, 0);
     this.scene.add(divider);
 
-    // Composite 3-part Avatar Pedestals (Outer Corners — zero overlap with zones)
-    this.buildAvatarObelisk(-9.1, 5.4, 0x34d399, 0x1e293b);
-    this.buildAvatarObelisk(9.1, -5.4, 0xf97316, 0x271513);
+    // Composite 3-part Avatar Pedestals (Outer Corners — cleanly outside the 7-column grid)
+    this.buildAvatarObelisk(-8.3, 5.2, 0x34d399, 0x1e293b);
+    this.buildAvatarObelisk(8.3, -5.2, 0xf97316, 0x271513);
 
-    // Build Zones: 5 Monster + 5 Spell/Trap per side
-    const mTexPlayer = makeZoneTileTexture('#38bdf8', '⚔');
-    const stTexPlayer = makeZoneTileTexture('#34d399', '✦');
+    // Build Zones: 5 Monster + 5 Spell/Trap per side (Master Rule 4/5: S/T 0 = Blue Pendulum, S/T 4 = Red Pendulum)
+    const mTexPlayer = makeZoneTileTexture('#d97706', '⚔');
+    const stTexPlayer = makeZoneTileTexture('#10b981', '✦');
     const mTexOpp = makeZoneTileTexture('#f97316', '⚔');
     const stTexOpp = makeZoneTileTexture('#ec4899', '✦');
-    const emzTex = makeZoneTileTexture('#eab308', '★');
+    const pendLeftTex = makePendulumZoneTexture('LEFT');
+    const pendRightTex = makePendulumZoneTexture('RIGHT');
+    const emzTex = makeZoneTileTexture('#38bdf8', '★');
 
     for (let i = 0; i < 5; i++) {
       this.createZonePad('player', 'MONSTER', i, BOARD_COLS[i], ROW_PLR_M, mTexPlayer);
-      this.createZonePad('player', 'SPELL_TRAP', i, BOARD_COLS[i], ROW_PLR_ST, stTexPlayer);
+      const plrStTex = i === 0 ? pendLeftTex : i === 4 ? pendRightTex : stTexPlayer;
+      this.createZonePad('player', 'SPELL_TRAP', i, BOARD_COLS[i], ROW_PLR_ST, plrStTex);
+
       this.createZonePad('opponent', 'MONSTER', i, BOARD_COLS[i], ROW_OPP_M, mTexOpp);
-      this.createZonePad('opponent', 'SPELL_TRAP', i, BOARD_COLS[i], ROW_OPP_ST, stTexOpp);
+      // Mirrored for opponent (their Left Pendulum is on +3.8 = index 4 from player's POV)
+      const oppStTex = i === 4 ? pendLeftTex : i === 0 ? pendRightTex : stTexOpp;
+      this.createZonePad('opponent', 'SPELL_TRAP', i, BOARD_COLS[i], ROW_OPP_ST, oppStTex);
     }
 
-    // 2 Extra Monster Zones
+    // 2 Extra Monster Zones (aligned directly above Monster columns 2 & 4)
     this.createZonePad('player', 'EXTRA_MONSTER', 0, EMZ_COLS[0], ROW_EMZ, emzTex);
     this.createZonePad('player', 'EXTRA_MONSTER', 1, EMZ_COLS[1], ROW_EMZ, emzTex);
 
-    // Field Spell Zones (Inner Wing, Monster Row)
-    const fieldTex = makeZoneTileTexture('#2dd4bf', '❖');
-    this.createZonePad('player', 'FIELD', 0, -COL_INNER_WING, ROW_PLR_M, fieldTex);
-    this.createZonePad('opponent', 'FIELD', 0, COL_INNER_WING, ROW_OPP_M, fieldTex);
+    // Field Spell Zones (Col 0 Monster Row — Green)
+    const fieldTex = makeZoneTileTexture('#22c55e', '❖');
+    this.createZonePad('player', 'FIELD', 0, -COL_SIDE, ROW_PLR_M, fieldTex);
+    this.createZonePad('opponent', 'FIELD', 0, COL_SIDE, ROW_OPP_M, fieldTex);
 
-    // Dedicated Pendulum Zones (Outer Wings, zero overlap with Deck / Extra Deck)
-    const pendLeftTex = makeZoneTileTexture('#38bdf8', '◄◈');
-    const pendRightTex = makeZoneTileTexture('#f43f5e', '◈►');
-    this.createZonePad('player', 'PENDULUM_LEFT', 0, -COL_OUTER_WING, ROW_PENDULUM, pendLeftTex);
-    this.createZonePad('player', 'PENDULUM_RIGHT', 0, COL_OUTER_WING, ROW_PENDULUM, pendRightTex);
-    this.createZonePad('opponent', 'PENDULUM_LEFT', 0, COL_OUTER_WING, -ROW_PENDULUM, pendLeftTex);
-    this.createZonePad('opponent', 'PENDULUM_RIGHT', 0, -COL_OUTER_WING, -ROW_PENDULUM, pendRightTex);
+    // Deck (Col 6 S/T Row) & Extra Deck (Col 0 S/T Row)
+    this.deckStacks.pDeck = this.buildDeckPedestal(COL_SIDE, ROW_PLR_ST, 'player', 'DECK', 0xd97706);
+    this.deckStacks.pExtra = this.buildDeckPedestal(-COL_SIDE, ROW_PLR_ST, 'player', 'EXTRA_DECK', 0x94a3b8);
+    this.deckStacks.oDeck = this.buildDeckPedestal(-COL_SIDE, ROW_OPP_ST, 'opponent', 'DECK', 0xd97706);
+    this.deckStacks.oExtra = this.buildDeckPedestal(COL_SIDE, ROW_OPP_ST, 'opponent', 'EXTRA_DECK', 0x94a3b8);
 
-    // Deck, Extra Deck, Graveyard, Banish Composite Pedestals
-    this.deckStacks.pDeck = this.buildDeckPedestal(COL_INNER_WING, ROW_PLR_ST, 'player', 'DECK', 0x38bdf8);
-    this.deckStacks.pExtra = this.buildDeckPedestal(-COL_INNER_WING, ROW_PLR_ST, 'player', 'EXTRA_DECK', 0xa855f7);
-    this.deckStacks.oDeck = this.buildDeckPedestal(-COL_INNER_WING, ROW_OPP_ST, 'opponent', 'DECK', 0xf97316);
-    this.deckStacks.oExtra = this.buildDeckPedestal(COL_INNER_WING, ROW_OPP_ST, 'opponent', 'EXTRA_DECK', 0xa855f7);
-
-    this.buildWellPedestal(COL_INNER_WING, ROW_PLR_M, 'player', 'GRAVEYARD', 0x64748b);
-    this.buildWellPedestal(COL_OUTER_WING, 1.15, 'player', 'BANISHED', 0x22d3ee);
-    this.buildWellPedestal(-COL_INNER_WING, ROW_OPP_M, 'opponent', 'GRAVEYARD', 0x64748b);
-    this.buildWellPedestal(-COL_OUTER_WING, -1.15, 'opponent', 'BANISHED', 0x22d3ee);
+    // Graveyard (Col 6 Monster Row) & Banished (outboard next to Graveyard)
+    this.buildWellPedestal(COL_SIDE, ROW_PLR_M, 'player', 'GRAVEYARD', 0x94a3b8);
+    this.buildWellPedestal(7.35, 1.35, 'player', 'BANISHED', 0x22d3ee);
+    this.buildWellPedestal(-COL_SIDE, ROW_OPP_M, 'opponent', 'GRAVEYARD', 0x94a3b8);
+    this.buildWellPedestal(-7.35, -1.35, 'opponent', 'BANISHED', 0x22d3ee);
   }
 
   private buildAvatarObelisk(x: number, z: number, gemColor: number, baseColor: number): void {
@@ -615,23 +686,25 @@ export class DuelArena3D {
     }
     if (zone === 'FIELD') {
       return new THREE.Vector3(
-        owner === 'player' ? -COL_INNER_WING : COL_INNER_WING,
+        owner === 'player' ? -COL_SIDE : COL_SIDE,
         0.12,
         owner === 'player' ? ROW_PLR_M : ROW_OPP_M
       );
     }
     if (zone === 'PENDULUM_LEFT') {
+      // Master Rule 4/5: Left Pendulum Zone = leftmost S/T slot (index 0 for player, index 4 for opponent)
       return new THREE.Vector3(
-        owner === 'player' ? -COL_OUTER_WING : COL_OUTER_WING,
+        owner === 'player' ? BOARD_COLS[0] : BOARD_COLS[4],
         0.12,
-        owner === 'player' ? ROW_PENDULUM : -ROW_PENDULUM
+        owner === 'player' ? ROW_PLR_ST : ROW_OPP_ST
       );
     }
     if (zone === 'PENDULUM_RIGHT') {
+      // Master Rule 4/5: Right Pendulum Zone = rightmost S/T slot (index 4 for player, index 0 for opponent)
       return new THREE.Vector3(
-        owner === 'player' ? COL_OUTER_WING : -COL_OUTER_WING,
+        owner === 'player' ? BOARD_COLS[4] : BOARD_COLS[0],
         0.12,
-        owner === 'player' ? ROW_PENDULUM : -ROW_PENDULUM
+        owner === 'player' ? ROW_PLR_ST : ROW_OPP_ST
       );
     }
     const x = BOARD_COLS[index] ?? 0;
@@ -649,7 +722,7 @@ export class DuelArena3D {
   setMode(mode: 'TITLE' | 'DUEL'): void {
     this.camMode = mode;
     if (mode === 'DUEL') {
-      this.camTargetPos.set(0, 13.6, 12.2);
+      this.camTargetPos.set(0, 12.2, 10.9);
       this.camLookTarget.set(0, 0, 0.35);
     }
   }

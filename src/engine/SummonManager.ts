@@ -547,8 +547,12 @@ export class SummonManager {
     if (!card) return { success: false, error: 'Carta no está en mano.' };
     const def = CardManager.getDef(card.cardId);
     if (def.subtype !== 'pendulum') return { success: false, error: 'No es un Monstruo de Péndulo.' };
-    if (side === 'LEFT' && ps.pendulumLeft) return { success: false, error: 'Escala Izquierda ocupada.' };
-    if (side === 'RIGHT' && ps.pendulumRight) return { success: false, error: 'Escala Derecha ocupada.' };
+    if (side === 'LEFT' && (ps.pendulumLeft || ps.spellsTraps[0])) {
+      return { success: false, error: 'Zona de Péndulo Izquierda ocupada.' };
+    }
+    if (side === 'RIGHT' && (ps.pendulumRight || ps.spellsTraps[4])) {
+      return { success: false, error: 'Zona de Péndulo Derecha ocupada.' };
+    }
 
     ps.hand = ps.hand.filter((c) => c.uid !== cardUid);
     card.location = side === 'LEFT' ? 'PENDULUM_LEFT' : 'PENDULUM_RIGHT';
