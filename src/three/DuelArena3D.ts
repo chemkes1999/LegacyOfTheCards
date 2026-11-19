@@ -64,113 +64,228 @@ const ROW_PLR_ST = 4.25;
 const EMZ_COLS = [-1.9, 1.9];
 const COL_SIDE = 5.7;
 
-function makeStoneFloorTexture(palette: 'volcanic' | 'temple'): THREE.CanvasTexture {
-  const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 512;
-  const ctx = canvas.getContext('2d')!;
+function makeStoneFloorTextures(palette: 'volcanic' | 'temple'): {
+  map: THREE.CanvasTexture;
+  bumpMap: THREE.CanvasTexture;
+} {
+  const size = 512;
+  const colorCanvas = document.createElement('canvas');
+  colorCanvas.width = size;
+  colorCanvas.height = size;
+  const ctx = colorCanvas.getContext('2d')!;
+
+  const bumpCanvas = document.createElement('canvas');
+  bumpCanvas.width = size;
+  bumpCanvas.height = size;
+  const bCtx = bumpCanvas.getContext('2d')!;
+
+  // Deterministic pseudo-random generator for natural stone mineral speckles
+  let seed = palette === 'volcanic' ? 1337 : 4242;
+  const rand = () => {
+    seed = (seed * 16807) % 2147483647;
+    return (seed - 1) / 2147483646;
+  };
 
   if (palette === 'volcanic') {
-    ctx.fillStyle = '#1b161a';
-    ctx.fillRect(0, 0, 512, 512);
-    // Lava cracks
-    ctx.strokeStyle = 'rgba(249, 115, 22, 0.55)';
-    ctx.lineWidth = 3;
-    for (let i = 0; i < 14; i++) {
+    // Deep carved dark basalt slate
+    ctx.fillStyle = '#1b1d24';
+    ctx.fillRect(0, 0, size, size);
+    bCtx.fillStyle = '#808080';
+    bCtx.fillRect(0, 0, size, size);
+
+    // Subtle stone slab tonal variation
+    const tile = 128;
+    for (let gy = 0; gy < size; gy += tile) {
+      for (let gx = 0; gx < size; gx += tile) {
+        const shade = Math.floor(24 + rand() * 14);
+        ctx.fillStyle = `rgb(${shade}, ${shade + 2}, ${shade + 7})`;
+        ctx.fillRect(gx + 2, gy + 2, tile - 4, tile - 4);
+      }
+    }
+
+    // Fine mineral grain & basalt pores
+    for (let i = 0; i < 2400; i++) {
+      const x = rand() * size;
+      const y = rand() * size;
+      const r = 0.7 + rand() * 2.1;
+      const bright = rand() > 0.5;
+      ctx.fillStyle = bright ? 'rgba(130, 140, 165, 0.055)' : 'rgba(6, 7, 10, 0.14)';
+      ctx.fillRect(x, y, r, r);
+      bCtx.fillStyle = bright ? 'rgba(205, 205, 205, 0.16)' : 'rgba(40, 40, 40, 0.18)';
+      bCtx.fillRect(x, y, r, r);
+    }
+
+    // Subtle warm bronze/ember hairline veins (not garish orange zigzags)
+    ctx.strokeStyle = 'rgba(212, 130, 62, 0.22)';
+    ctx.lineWidth = 1.4;
+    for (let i = 0; i < 6; i++) {
       ctx.beginPath();
-      let x = (i * 47) % 512;
+      let x = rand() * size;
       let y = 0;
       ctx.moveTo(x, y);
-      for (let s = 0; s < 6; s++) {
-        x += ((i % 2 === 0 ? 1 : -1) * 28) + Math.sin(i + s) * 14;
-        y += 90;
+      for (let s = 0; s < 8; s++) {
+        x += (rand() - 0.5) * 44;
+        y += size / 8;
         ctx.lineTo(x, y);
       }
       ctx.stroke();
     }
-    // Stone grid blocks
-    ctx.strokeStyle = 'rgba(10, 8, 12, 0.65)';
-    ctx.lineWidth = 4;
-    for (let g = 0; g <= 512; g += 128) {
-      ctx.beginPath();
-      ctx.moveTo(g, 0);
-      ctx.lineTo(g, 512);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(0, g);
-      ctx.lineTo(512, g);
-      ctx.stroke();
-    }
   } else {
-    ctx.fillStyle = '#8b8368';
-    ctx.fillRect(0, 0, 512, 512);
-    // Mossy stone variation
-    for (let i = 0; i < 42; i++) {
-      const rx = (i * 89) % 480;
-      const ry = (i * 137) % 480;
-      ctx.fillStyle = i % 3 === 0 ? 'rgba(101, 134, 65, 0.28)' : 'rgba(226, 218, 192, 0.14)';
-      ctx.fillRect(rx, ry, 64, 48);
+    // Honed warm limestone / sandstone sanctuary marble
+    ctx.fillStyle = '#30343e';
+    ctx.fillRect(0, 0, size, size);
+    bCtx.fillStyle = '#808080';
+    bCtx.fillRect(0, 0, size, size);
+
+    const tile = 128;
+    for (let gy = 0; gy < size; gy += tile) {
+      for (let gx = 0; gx < size; gx += tile) {
+        const base = Math.floor(42 + rand() * 14);
+        ctx.fillStyle = `rgb(${base + 4}, ${base + 2}, ${base - 4})`;
+        ctx.fillRect(gx + 2, gy + 2, tile - 4, tile - 4);
+      }
     }
-    ctx.strokeStyle = 'rgba(54, 52, 40, 0.45)';
-    ctx.lineWidth = 4;
-    for (let g = 0; g <= 512; g += 128) {
+
+    // Honed marble grain & warm gold flecks
+    for (let i = 0; i < 2400; i++) {
+      const x = rand() * size;
+      const y = rand() * size;
+      const r = 0.7 + rand() * 2.2;
+      const bright = rand() > 0.48;
+      ctx.fillStyle = bright ? 'rgba(215, 200, 170, 0.06)' : 'rgba(12, 14, 18, 0.14)';
+      ctx.fillRect(x, y, r, r);
+      bCtx.fillStyle = bright ? 'rgba(210, 210, 210, 0.15)' : 'rgba(45, 45, 45, 0.18)';
+      bCtx.fillRect(x, y, r, r);
+    }
+
+    // Subtle inlaid marble veins
+    ctx.strokeStyle = 'rgba(212, 175, 95, 0.14)';
+    ctx.lineWidth = 1.2;
+    for (let i = 0; i < 6; i++) {
       ctx.beginPath();
-      ctx.moveTo(g, 0);
-      ctx.lineTo(g, 512);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(0, g);
-      ctx.lineTo(512, g);
+      let x = rand() * size;
+      let y = 0;
+      ctx.moveTo(x, y);
+      for (let s = 0; s < 8; s++) {
+        x += (rand() - 0.5) * 42;
+        y += size / 8;
+        ctx.lineTo(x, y);
+      }
       ctx.stroke();
     }
   }
 
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  tex.repeat.set(3, 2);
-  return tex;
+  // Carved beveled mortar seams on both color and bump maps
+  ctx.strokeStyle = 'rgba(8, 10, 14, 0.72)';
+  ctx.lineWidth = 3;
+  bCtx.strokeStyle = '#181818';
+  bCtx.lineWidth = 4;
+  for (let g = 0; g <= size; g += 128) {
+    ctx.beginPath();
+    ctx.moveTo(g, 0);
+    ctx.lineTo(g, size);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0, g);
+    ctx.lineTo(size, g);
+    ctx.stroke();
+
+    bCtx.beginPath();
+    bCtx.moveTo(g, 0);
+    bCtx.lineTo(g, size);
+    bCtx.stroke();
+    bCtx.beginPath();
+    bCtx.moveTo(0, g);
+    bCtx.lineTo(size, g);
+    bCtx.stroke();
+  }
+
+  const map = new THREE.CanvasTexture(colorCanvas);
+  map.colorSpace = THREE.SRGBColorSpace;
+  map.wrapS = map.wrapT = THREE.RepeatWrapping;
+  map.repeat.set(3, 1.5);
+
+  const bumpMap = new THREE.CanvasTexture(bumpCanvas);
+  bumpMap.wrapS = bumpMap.wrapT = THREE.RepeatWrapping;
+  bumpMap.repeat.set(3, 1.5);
+
+  return { map, bumpMap };
 }
 
-function makeZoneTileTexture(accent: string, symbol: string): THREE.CanvasTexture {
+function makeZoneTileTexture(accent: string, symbol: string, label: string = ''): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
-  canvas.width = 256;
-  canvas.height = 320;
+  canvas.width = 512;
+  canvas.height = 640;
   const ctx = canvas.getContext('2d')!;
+  ctx.scale(2, 2);
 
-  ctx.fillStyle = 'rgba(12, 16, 24, 0.55)';
+  // Recessed dark etched stone interior with inner shadow vignette
+  const bg = ctx.createRadialGradient(128, 160, 20, 128, 160, 185);
+  bg.addColorStop(0, 'rgba(18, 22, 32, 0.78)');
+  bg.addColorStop(1, 'rgba(7, 9, 14, 0.92)');
+  ctx.fillStyle = bg;
   ctx.fillRect(0, 0, 256, 320);
 
+  // Outer engraved metallic border
   ctx.strokeStyle = accent;
-  ctx.lineWidth = 6;
-  ctx.strokeRect(10, 10, 236, 300);
+  ctx.globalAlpha = 0.85;
+  ctx.lineWidth = 4;
+  ctx.strokeRect(8, 8, 240, 304);
 
-  ctx.strokeStyle = 'rgba(255,255,255,0.22)';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(22, 22, 212, 276);
+  // Inner fine antique gold hairline
+  ctx.strokeStyle = 'rgba(235, 215, 165, 0.28)';
+  ctx.globalAlpha = 1;
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(18, 18, 220, 284);
 
-  // Corner diamonds
-  ctx.fillStyle = accent;
-  const corners = [[22, 22], [234, 22], [22, 298], [234, 298]];
-  for (const [cx, cy] of corners) {
+  // Ornate corner L-brackets
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 3;
+  const bLen = 18;
+  const brackets: [number, number, number, number][] = [
+    [18, 18, 1, 1],
+    [238, 18, -1, 1],
+    [18, 302, 1, -1],
+    [238, 302, -1, -1],
+  ];
+  for (const [bx, by, dx, dy] of brackets) {
     ctx.beginPath();
-    ctx.arc(cx, cy, 5, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.moveTo(bx + dx * bLen, by);
+    ctx.lineTo(bx, by);
+    ctx.lineTo(bx, by + dy * bLen);
+    ctx.stroke();
   }
 
-  // Center glyph
+  // Subtle recessed center seal
+  ctx.save();
   ctx.strokeStyle = accent;
-  ctx.globalAlpha = 0.55;
-  ctx.lineWidth = 3;
+  ctx.globalAlpha = 0.35;
+  ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.arc(128, 160, 44, 0, Math.PI * 2);
+  ctx.arc(128, 154, 46, 0, Math.PI * 2);
   ctx.stroke();
 
+  ctx.setLineDash([5, 5]);
+  ctx.beginPath();
+  ctx.arc(128, 154, 36, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
   ctx.fillStyle = accent;
-  ctx.font = 'bold 26px sans-serif';
+  ctx.globalAlpha = 0.55;
+  ctx.font = 'bold 28px Georgia, serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(symbol, 128, 160);
+  ctx.fillText(symbol, 128, 155);
+  ctx.restore();
+
+  if (label) {
+    ctx.fillStyle = 'rgba(226, 232, 240, 0.55)';
+    ctx.font = 'bold 12px Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, 128, 286);
+  }
 
   const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -417,96 +532,138 @@ export class DuelArena3D {
   }
 
   private buildLighting(): void {
-    const hemi = new THREE.HemisphereLight(0x93c5fd, 0x451a03, 0.85);
+    const hemi = new THREE.HemisphereLight(0xcbd5e1, 0x1c140d, 0.72);
     this.scene.add(hemi);
 
-    const key = new THREE.DirectionalLight(0xfff1d6, 2.2);
-    key.position.set(6, 15, 9);
+    // Overhead warm tournament key spotlight with crisp 2048 soft shadows
+    const key = new THREE.DirectionalLight(0xfff0d4, 2.35);
+    key.position.set(4.5, 16, 8.5);
     key.castShadow = !this.isSoftwareGl;
-    key.shadow.mapSize.set(1024, 1024);
-    key.shadow.camera.left = -9;
-    key.shadow.camera.right = 9;
-    key.shadow.camera.top = 9;
-    key.shadow.camera.bottom = -9;
-    key.shadow.bias = -0.0005;
+    key.shadow.mapSize.set(this.isSoftwareGl ? 1024 : 2048, this.isSoftwareGl ? 1024 : 2048);
+    key.shadow.camera.left = -10.5;
+    key.shadow.camera.right = 10.5;
+    key.shadow.camera.top = 9.5;
+    key.shadow.camera.bottom = -9.5;
+    key.shadow.bias = -0.0004;
     key.shadow.normalBias = 0.02;
     this.scene.add(key);
 
-    const rim = new THREE.DirectionalLight(0x38bdf8, 0.9);
-    rim.position.set(-8, 7, -10);
+    // Cool architectural rim light from behind
+    const rim = new THREE.DirectionalLight(0x7dd3fc, 0.85);
+    rim.position.set(-8, 8, -11);
     this.scene.add(rim);
 
-    // Subtle volcanic glow from opponent side & emerald light on player side
-    const lavaGlow = new THREE.PointLight(0xf97316, 6, 14, 1.6);
-    lavaGlow.position.set(-6, 1.5, -4);
-    this.scene.add(lavaGlow);
-
-    const sanctuaryGlow = new THREE.PointLight(0x34d399, 4.5, 14, 1.6);
-    sanctuaryGlow.position.set(6, 1.8, 4);
-    this.scene.add(sanctuaryGlow);
+    // Subtle warm tabletop brazier glows at corners
+    const cornerGlows: [number, number, number][] = [
+      [-8.2, 1.3, 5.9],
+      [8.2, 1.3, 5.9],
+      [-8.2, 1.3, -5.9],
+      [8.2, 1.3, -5.9],
+    ];
+    for (const [gx, gy, gz] of cornerGlows) {
+      const pt = new THREE.PointLight(0xf59e0b, 3.2, 10, 1.8);
+      pt.position.set(gx, gy, gz);
+      this.scene.add(pt);
+    }
   }
 
   private buildDuelBoard(): void {
-    // Extended outer arena plinth (no void edges)
+    const maxAniso = this.renderer.capabilities.getMaxAnisotropy();
+
+    // Deep atmospheric sanctuary hall floor
     const outerPlinth = new THREE.Mesh(
-      new THREE.CylinderGeometry(24, 26, 1.2, 48),
-      new THREE.MeshStandardMaterial({ color: 0x0b101b, roughness: 0.88, metalness: 0.15 })
+      new THREE.CylinderGeometry(28, 30, 1.2, 48),
+      new THREE.MeshStandardMaterial({ color: 0x07090f, roughness: 0.92, metalness: 0.12 })
     );
-    outerPlinth.position.y = -0.68;
+    outerPlinth.position.y = -0.78;
     outerPlinth.receiveShadow = true;
     this.scene.add(outerPlinth);
 
-    // Opponent Volcanic Arena Half (z < 0)
-    const oppTex = makeStoneFloorTexture('volcanic');
-    oppTex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+    // Opponent Dark Basalt Arena Half (z < 0) with PBR bump map
+    const oppTextures = makeStoneFloorTextures('volcanic');
+    oppTextures.map.anisotropy = maxAniso;
+    oppTextures.bumpMap.anisotropy = maxAniso;
     const oppGround = new THREE.Mesh(
-      new THREE.BoxGeometry(15.2, 0.2, 6.2),
-      new THREE.MeshStandardMaterial({ map: oppTex, color: 0xffffff, roughness: 0.78, metalness: 0.15 })
+      new THREE.BoxGeometry(15.2, 0.24, 6.2),
+      new THREE.MeshStandardMaterial({
+        map: oppTextures.map,
+        bumpMap: oppTextures.bumpMap,
+        bumpScale: 0.045,
+        color: 0xffffff,
+        roughness: 0.72,
+        metalness: 0.14,
+      })
     );
-    oppGround.position.set(0, -0.11, -3.12);
+    oppGround.position.set(0, -0.12, -3.12);
     oppGround.receiveShadow = true;
     this.scene.add(oppGround);
 
-    // Player Temple Sanctuary Half (z > 0)
-    const plrTex = makeStoneFloorTexture('temple');
-    plrTex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+    // Player Honed Sanctuary Marble Half (z > 0) with PBR bump map
+    const plrTextures = makeStoneFloorTextures('temple');
+    plrTextures.map.anisotropy = maxAniso;
+    plrTextures.bumpMap.anisotropy = maxAniso;
     const plrGround = new THREE.Mesh(
-      new THREE.BoxGeometry(15.2, 0.2, 6.2),
-      new THREE.MeshStandardMaterial({ map: plrTex, color: 0xffffff, roughness: 0.72, metalness: 0.1 })
+      new THREE.BoxGeometry(15.2, 0.24, 6.2),
+      new THREE.MeshStandardMaterial({
+        map: plrTextures.map,
+        bumpMap: plrTextures.bumpMap,
+        bumpScale: 0.045,
+        color: 0xffffff,
+        roughness: 0.64,
+        metalness: 0.12,
+      })
     );
-    plrGround.position.set(0, -0.11, 3.12);
+    plrGround.position.set(0, -0.12, 3.12);
     plrGround.receiveShadow = true;
     this.scene.add(plrGround);
 
-    // Symmetrical Dark Metallic Board Rim (compact 7-column Master Rule 4/5 frame)
+    // Heavy Carved Obsidian Table Apron Surround
     const boardRim = new THREE.Mesh(
-      new THREE.BoxGeometry(15.7, 0.18, 12.9),
-      new THREE.MeshStandardMaterial({ color: 0x161b26, roughness: 0.5, metalness: 0.55 })
+      new THREE.BoxGeometry(16.3, 0.32, 13.5),
+      new THREE.MeshStandardMaterial({ color: 0x11141d, roughness: 0.48, metalness: 0.42 })
     );
-    boardRim.position.set(0, -0.16, 0);
+    boardRim.position.set(0, -0.22, 0);
     boardRim.receiveShadow = true;
     this.scene.add(boardRim);
 
-    // Glowing Midfield Rift Divider
+    // Brushed Antique-Gold Inlay Rails framing all 4 edges of the stone arena
+    const goldRailMat = new THREE.MeshStandardMaterial({
+      color: 0xc9a04e,
+      roughness: 0.28,
+      metalness: 0.86,
+    });
+    const northRail = new THREE.Mesh(new THREE.BoxGeometry(15.5, 0.06, 0.12), goldRailMat);
+    northRail.position.set(0, 0.01, -6.28);
+    const southRail = northRail.clone();
+    southRail.position.set(0, 0.01, 6.28);
+    const westRail = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.06, 12.68), goldRailMat);
+    westRail.position.set(-7.68, 0.01, 0);
+    const eastRail = westRail.clone();
+    eastRail.position.set(7.68, 0.01, 0);
+    this.scene.add(northRail, southRail, westRail, eastRail);
+
+    // Engraved Brushed-Bronze Midfield Divider Strip
     const divider = new THREE.Mesh(
-      new THREE.BoxGeometry(15.2, 0.04, 0.14),
-      new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0ea5e9, emissiveIntensity: 1.8, roughness: 0.2 })
+      new THREE.BoxGeometry(15.2, 0.025, 0.12),
+      goldRailMat
     );
-    divider.position.set(0, 0.0, 0);
+    divider.position.set(0, 0.005, 0);
     this.scene.add(divider);
 
-    // Composite 3-part Avatar Pedestals (Outer Corners — cleanly outside the 7-column grid)
-    this.buildAvatarObelisk(-8.3, 5.2, 0x34d399, 0x1e293b);
-    this.buildAvatarObelisk(8.3, -5.2, 0xf97316, 0x271513);
+    // 4 Sculpted Bronze Corner Braziers (realistic atmospheric lighting)
+    this.buildAvatarObelisk(-8.2, 6.1, 0xf59e0b, 0x161922);
+    this.buildAvatarObelisk(8.2, 6.1, 0xf59e0b, 0x161922);
+    this.buildAvatarObelisk(-8.2, -6.1, 0xea580c, 0x1a1416);
+    this.buildAvatarObelisk(8.2, -6.1, 0xea580c, 0x1a1416);
 
-    // Build Zones: 5 Monster + 5 Spell/Trap per side (Master Rule 4/5: S/T 0 = Blue Pendulum, S/T 4 = Red Pendulum)
-    const mTexPlayer = makeZoneTileTexture('#d97706', '⚔');
-    const stTexPlayer = makeZoneTileTexture('#10b981', '✦');
-    const mTexOpp = makeZoneTileTexture('#f97316', '⚔');
-    const stTexOpp = makeZoneTileTexture('#ec4899', '✦');
+    // Build Zones: Master Rule 4/5 7-column etched-stone inlays
+    const mTexPlayer = makeZoneTileTexture('#c99b44', '⚔', 'MONSTRUO');
+    const stTexPlayer = makeZoneTileTexture('#2a9d8f', '✦', 'MÁGICA / TRAMPA');
+    const mTexOpp = makeZoneTileTexture('#b86b3a', '⚔', 'MONSTRUO');
+    const stTexOpp = makeZoneTileTexture('#a84674', '✦', 'MÁGICA / TRAMPA');
     const pendLeftTex = makePendulumZoneTexture('LEFT');
     const pendRightTex = makePendulumZoneTexture('RIGHT');
-    const emzTex = makeZoneTileTexture('#38bdf8', '★');
+    const emzTex = makeZoneTileTexture('#d4af5f', '★', 'EXTRA');
 
     for (let i = 0; i < 5; i++) {
       this.createZonePad('player', 'MONSTER', i, BOARD_COLS[i], ROW_PLR_M, mTexPlayer);
@@ -514,65 +671,67 @@ export class DuelArena3D {
       this.createZonePad('player', 'SPELL_TRAP', i, BOARD_COLS[i], ROW_PLR_ST, plrStTex);
 
       this.createZonePad('opponent', 'MONSTER', i, BOARD_COLS[i], ROW_OPP_M, mTexOpp);
-      // Mirrored for opponent (their Left Pendulum is on +3.8 = index 4 from player's POV)
       const oppStTex = i === 4 ? pendLeftTex : i === 0 ? pendRightTex : stTexOpp;
       this.createZonePad('opponent', 'SPELL_TRAP', i, BOARD_COLS[i], ROW_OPP_ST, oppStTex);
     }
 
-    // 2 Extra Monster Zones (aligned directly above Monster columns 2 & 4)
+    // 2 Extra Monster Zones
     this.createZonePad('player', 'EXTRA_MONSTER', 0, EMZ_COLS[0], ROW_EMZ, emzTex);
     this.createZonePad('player', 'EXTRA_MONSTER', 1, EMZ_COLS[1], ROW_EMZ, emzTex);
 
-    // Field Spell Zones (Col 0 Monster Row — Green)
-    const fieldTex = makeZoneTileTexture('#22c55e', '❖');
+    // Field Spell Zones (Col 0 Monster Row — Emerald)
+    const fieldTex = makeZoneTileTexture('#2ea06b', '❖', 'CAMPO');
     this.createZonePad('player', 'FIELD', 0, -COL_SIDE, ROW_PLR_M, fieldTex);
     this.createZonePad('opponent', 'FIELD', 0, COL_SIDE, ROW_OPP_M, fieldTex);
 
     // Deck (Col 6 S/T Row) & Extra Deck (Col 0 S/T Row)
-    this.deckStacks.pDeck = this.buildDeckPedestal(COL_SIDE, ROW_PLR_ST, 'player', 'DECK', 0xd97706);
-    this.deckStacks.pExtra = this.buildDeckPedestal(-COL_SIDE, ROW_PLR_ST, 'player', 'EXTRA_DECK', 0x94a3b8);
-    this.deckStacks.oDeck = this.buildDeckPedestal(-COL_SIDE, ROW_OPP_ST, 'opponent', 'DECK', 0xd97706);
-    this.deckStacks.oExtra = this.buildDeckPedestal(COL_SIDE, ROW_OPP_ST, 'opponent', 'EXTRA_DECK', 0x94a3b8);
+    this.deckStacks.pDeck = this.buildDeckPedestal(COL_SIDE, ROW_PLR_ST, 'player', 'DECK', 0xc9a04e);
+    this.deckStacks.pExtra = this.buildDeckPedestal(-COL_SIDE, ROW_PLR_ST, 'player', 'EXTRA_DECK', 0x7a8599);
+    this.deckStacks.oDeck = this.buildDeckPedestal(-COL_SIDE, ROW_OPP_ST, 'opponent', 'DECK', 0xc9a04e);
+    this.deckStacks.oExtra = this.buildDeckPedestal(COL_SIDE, ROW_OPP_ST, 'opponent', 'EXTRA_DECK', 0x7a8599);
 
-    // Graveyard (Col 6 Monster Row) & Banished (outboard next to Graveyard)
-    this.buildWellPedestal(COL_SIDE, ROW_PLR_M, 'player', 'GRAVEYARD', 0x94a3b8);
-    this.buildWellPedestal(7.35, 1.35, 'player', 'BANISHED', 0x22d3ee);
-    this.buildWellPedestal(-COL_SIDE, ROW_OPP_M, 'opponent', 'GRAVEYARD', 0x94a3b8);
-    this.buildWellPedestal(-7.35, -1.35, 'opponent', 'BANISHED', 0x22d3ee);
+    // Sculpted Obsidian & Bronze Graveyard & Banished Shrines
+    this.buildWellPedestal(COL_SIDE, ROW_PLR_M, 'player', 'GRAVEYARD', 0x475569);
+    this.buildWellPedestal(7.45, 1.35, 'player', 'BANISHED', 0x0e7490);
+    this.buildWellPedestal(-COL_SIDE, ROW_OPP_M, 'opponent', 'GRAVEYARD', 0x475569);
+    this.buildWellPedestal(-7.45, -1.35, 'opponent', 'BANISHED', 0x0e7490);
   }
 
   private buildAvatarObelisk(x: number, z: number, gemColor: number, baseColor: number): void {
     const group = new THREE.Group();
     group.position.set(x, 0, z);
 
+    // Sculpted octagonal stone brazier pedestal
     const base = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.85, 1.05, 0.36, 8),
-      new THREE.MeshStandardMaterial({ color: baseColor, roughness: 0.7, metalness: 0.25 })
+      new THREE.CylinderGeometry(0.48, 0.64, 0.42, 8),
+      new THREE.MeshStandardMaterial({ color: baseColor, roughness: 0.68, metalness: 0.3 })
     );
-    base.position.y = 0.18;
+    base.position.y = 0.21;
     base.castShadow = true;
     base.receiveShadow = true;
     group.add(base);
 
+    // Antique bronze bowl rim
     const ring = new THREE.Mesh(
-      new THREE.TorusGeometry(0.68, 0.06, 8, 24),
-      new THREE.MeshStandardMaterial({ color: 0xd4a53a, roughness: 0.25, metalness: 0.85 })
+      new THREE.TorusGeometry(0.42, 0.055, 10, 24),
+      new THREE.MeshStandardMaterial({ color: 0xc9a04e, roughness: 0.28, metalness: 0.88 })
     );
     ring.rotation.x = Math.PI / 2;
-    ring.position.y = 0.38;
+    ring.position.y = 0.44;
     group.add(ring);
 
+    // Glowing ember crystal core inside the brazier
     const crystal = new THREE.Mesh(
-      new THREE.OctahedronGeometry(0.42, 0),
+      new THREE.OctahedronGeometry(0.22, 1),
       new THREE.MeshStandardMaterial({
         color: gemColor,
         emissive: gemColor,
-        emissiveIntensity: 0.85,
-        roughness: 0.15,
-        metalness: 0.4,
+        emissiveIntensity: 1.4,
+        roughness: 0.2,
+        metalness: 0.2,
       })
     );
-    crystal.position.y = 1.15;
+    crystal.position.y = 0.62;
     group.add(crystal);
     this.duelOrbitCrystal.push(crystal);
 
@@ -591,31 +750,33 @@ export class DuelArena3D {
     group.rotation.y = owner === 'player' ? 0 : Math.PI;
 
     const plinth = new THREE.Mesh(
-      new THREE.BoxGeometry(1.62, 0.12, 2.2),
-      new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.55, metalness: 0.45 })
+      new THREE.BoxGeometry(1.6, 0.1, 2.18),
+      new THREE.MeshStandardMaterial({ color: 0x151821, roughness: 0.52, metalness: 0.48 })
     );
-    plinth.position.y = 0.06;
+    plinth.position.y = 0.05;
+    plinth.receiveShadow = true;
     group.add(plinth);
 
     const trim = new THREE.Mesh(
-      new THREE.BoxGeometry(1.68, 0.04, 2.26),
-      new THREE.MeshStandardMaterial({ color: accentHex, emissive: accentHex, emissiveIntensity: 0.5, roughness: 0.3 })
+      new THREE.BoxGeometry(1.66, 0.035, 2.24),
+      new THREE.MeshStandardMaterial({ color: accentHex, roughness: 0.3, metalness: 0.82 })
     );
-    trim.position.y = 0.02;
+    trim.position.y = 0.018;
     group.add(trim);
 
     const backTex = this.texFactory.getCardBackTexture();
     const stackMats = [
-      new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.6 }),
-      new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.6 }),
-      new THREE.MeshStandardMaterial({ map: backTex, color: 0xffffff, roughness: 0.45 }),
-      new THREE.MeshStandardMaterial({ color: 0x1e293b }),
-      new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.6 }),
-      new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.6 }),
+      new THREE.MeshStandardMaterial({ color: 0xc7bba8, roughness: 0.72 }),
+      new THREE.MeshStandardMaterial({ color: 0xc7bba8, roughness: 0.72 }),
+      new THREE.MeshStandardMaterial({ map: backTex, color: 0xffffff, roughness: 0.42, metalness: 0.06 }),
+      new THREE.MeshStandardMaterial({ color: 0x151821 }),
+      new THREE.MeshStandardMaterial({ color: 0xc7bba8, roughness: 0.72 }),
+      new THREE.MeshStandardMaterial({ color: 0xc7bba8, roughness: 0.72 }),
     ];
     const stack = new THREE.Mesh(new THREE.BoxGeometry(1.42, 0.45, 2.02), stackMats);
-    stack.position.y = 0.34;
+    stack.position.y = 0.33;
     stack.castShadow = true;
+    stack.receiveShadow = true;
     stack.userData = { owner, zone, index: 0 };
     group.add(stack);
     this.interactables.push(stack);
@@ -627,24 +788,38 @@ export class DuelArena3D {
     const group = new THREE.Group();
     group.position.set(x, 0, z);
 
+    // Sculpted dark obsidian crypt ring
     const ring = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.74, 0.85, 0.12, 16),
-      new THREE.MeshStandardMaterial({ color: 0x181c26, roughness: 0.6, metalness: 0.4 })
+      new THREE.CylinderGeometry(0.72, 0.84, 0.12, 24),
+      new THREE.MeshStandardMaterial({ color: 0x141720, roughness: 0.55, metalness: 0.45 })
     );
     ring.position.y = 0.06;
+    ring.castShadow = true;
+    ring.receiveShadow = true;
     group.add(ring);
 
+    // Antique brass inner collar
+    const brassRing = new THREE.Mesh(
+      new THREE.TorusGeometry(0.64, 0.032, 8, 28),
+      new THREE.MeshStandardMaterial({ color: 0xc9a04e, roughness: 0.3, metalness: 0.85 })
+    );
+    brassRing.rotation.x = Math.PI / 2;
+    brassRing.position.y = 0.125;
+    group.add(brassRing);
+
+    // Deep recessed dark crypt core (subtle glow instead of flat white disc)
     const core = new THREE.Mesh(
-      new THREE.CircleGeometry(0.58, 24),
+      new THREE.CircleGeometry(0.6, 28),
       new THREE.MeshStandardMaterial({
-        color: accentHex,
+        color: 0x0b0e16,
         emissive: accentHex,
-        emissiveIntensity: 0.75,
-        roughness: 0.3,
+        emissiveIntensity: 0.38,
+        roughness: 0.35,
+        metalness: 0.3,
       })
     );
     core.rotation.x = -Math.PI / 2;
-    core.position.y = 0.13;
+    core.position.y = 0.122;
     core.userData = { owner, zone, index: 0 };
     group.add(core);
     this.interactables.push(core);

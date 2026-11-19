@@ -129,14 +129,15 @@ export class CardTextureFactory {
   getCardBackTexture(): THREE.CanvasTexture {
     if (this.backTexture) return this.backTexture;
     const canvas = document.createElement('canvas');
-    canvas.width = 256;
-    canvas.height = 372;
+    canvas.width = 512;
+    canvas.height = 744;
     const ctx = canvas.getContext('2d')!;
+    ctx.scale(2, 2);
 
     const grad = ctx.createLinearGradient(0, 0, 256, 372);
-    grad.addColorStop(0, '#1e1410');
-    grad.addColorStop(0.5, '#3b2416');
-    grad.addColorStop(1, '#120c09');
+    grad.addColorStop(0, '#21150e');
+    grad.addColorStop(0.5, '#3e2515');
+    grad.addColorStop(1, '#120b07');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 256, 372);
 
@@ -144,7 +145,7 @@ export class CardTextureFactory {
     ctx.lineWidth = 10;
     ctx.strokeRect(10, 10, 236, 352);
 
-    ctx.strokeStyle = 'rgba(218, 175, 72, 0.45)';
+    ctx.strokeStyle = 'rgba(218, 175, 72, 0.48)';
     ctx.lineWidth = 2;
     ctx.strokeRect(20, 20, 216, 332);
 
@@ -177,9 +178,10 @@ export class CardTextureFactory {
 
     const card = CardManager.getDef(cardId);
     const canvas = document.createElement('canvas');
-    canvas.width = 256;
-    canvas.height = 372;
+    canvas.width = 512;
+    canvas.height = 744;
     const ctx = canvas.getContext('2d')!;
+    ctx.scale(2, 2);
     const tex = new THREE.CanvasTexture(canvas);
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.anisotropy = this.maxAniso;

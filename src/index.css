@@ -7,6 +7,13 @@
     --font-display: 'Cinzel', Georgia, serif;
     --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+
+    --surface-obsidian: rgba(12, 15, 22, 0.86);
+    --surface-obsidian-solid: #0e1118;
+    --surface-elevated: rgba(20, 24, 34, 0.92);
+    --gold-hairline: rgba(212, 175, 95, 0.32);
+    --gold-bright: #e5c068;
+    --gold-muted: #a68846;
   }
 
   html,
@@ -16,7 +23,7 @@
     height: 100%;
     margin: 0;
     padding: 0;
-    background-color: #090b10;
+    background-color: #07090e;
     color: #f1f5f9;
     font-family: var(--font-sans);
     overflow: hidden;
@@ -30,6 +37,64 @@
 .font-mono-num {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+}
+
+/* Realistic brushed obsidian & antique gold tournament HUD surfaces */
+.duel-plate {
+  background: linear-gradient(180deg, rgba(22, 26, 36, 0.92) 0%, rgba(11, 13, 20, 0.94) 100%);
+  border: 1px solid var(--gold-hairline);
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 244, 214, 0.08);
+  backdrop-filter: blur(12px);
+}
+
+.duel-plate-subtle {
+  background: linear-gradient(180deg, rgba(16, 20, 29, 0.84) 0%, rgba(9, 11, 17, 0.88) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(10px);
+}
+
+.duel-vignette {
+  background: radial-gradient(
+    ellipse at 50% 48%,
+    rgba(0, 0, 0, 0) 56%,
+    rgba(4, 6, 11, 0.42) 84%,
+    rgba(2, 4, 8, 0.78) 100%
+  );
+}
+
+.duel-btn-gold {
+  background: linear-gradient(180deg, #e7c26c 0%, #c6983b 100%);
+  color: #141008;
+  border: 1px solid rgba(255, 240, 195, 0.55);
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+.duel-btn-gold:hover {
+  background: linear-gradient(180deg, #f2d180 0%, #d4a647 100%);
+}
+
+.duel-btn-crimson {
+  background: linear-gradient(180deg, #b92b3b 0%, #871926 100%);
+  color: #fff5f5;
+  border: 1px solid rgba(255, 190, 195, 0.3);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+.duel-btn-crimson:hover {
+  background: linear-gradient(180deg, #cc3546 0%, #991e2d 100%);
+}
+
+.duel-btn-slate {
+  background: linear-gradient(180deg, rgba(36, 42, 56, 0.92) 0%, rgba(22, 26, 36, 0.96) 100%);
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.duel-btn-slate:hover {
+  background: linear-gradient(180deg, rgba(48, 56, 74, 0.95) 0%, rgba(30, 35, 48, 0.98) 100%);
+  border-color: var(--gold-hairline);
 }
 
 /* Custom sleek dark scrollbar for deck builder & modals */
@@ -51,24 +116,47 @@
 @keyframes cutinSlide {
   0% {
     opacity: 0;
-    transform: scale(1.16) translateY(16px);
+    transform: scale(1.08) translateY(8px);
   }
-  18% {
+  16% {
     opacity: 1;
     transform: scale(1) translateY(0);
   }
-  82% {
+  84% {
     opacity: 1;
-    transform: scale(1.03) translateY(-2px);
+    transform: scale(1.01) translateY(0);
   }
   100% {
     opacity: 0;
-    transform: scale(0.96) translateY(-10px);
+    transform: scale(0.98) translateY(-6px);
   }
 }
 
 .animate-cutin {
-  animation: cutinSlide 2.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: cutinSlide 1.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes lpFloat {
+  0% {
+    opacity: 0;
+    transform: translateY(6px) scale(0.92);
+  }
+  18% {
+    opacity: 1;
+    transform: translateY(0) scale(1.06);
+  }
+  75% {
+    opacity: 1;
+    transform: translateY(-10px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.96);
+  }
+}
+
+.animate-lp-float {
+  animation: lpFloat 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes lpFlash {
@@ -82,6 +170,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .animate-cutin,
+  .animate-lp-float,
   .animate-lp-hit {
     animation: none !important;
   }
