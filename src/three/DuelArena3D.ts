@@ -55,13 +55,16 @@ const _scaleVec = new THREE.Vector3();
 const _color = new THREE.Color();
 const _euler = new THREE.Euler();
 
-const BOARD_COLS = [-3.9, -1.95, 0, 1.95, 3.9];
+const BOARD_COLS = [-3.8, -1.9, 0, 1.9, 3.8];
 const ROW_OPP_ST = -4.25;
 const ROW_OPP_M = -2.15;
 const ROW_EMZ = 0;
 const ROW_PLR_M = 2.15;
 const ROW_PLR_ST = 4.25;
-const EMZ_COLS = [-1.95, 1.95];
+const EMZ_COLS = [-1.9, 1.9];
+const COL_INNER_WING = 5.75;
+const COL_OUTER_WING = 7.65;
+const ROW_PENDULUM = 3.2;
 
 function makeStoneFloorTexture(palette: 'volcanic' | 'temple'): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
@@ -385,7 +388,7 @@ export class DuelArena3D {
     const oppTex = makeStoneFloorTexture('volcanic');
     oppTex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
     const oppGround = new THREE.Mesh(
-      new THREE.BoxGeometry(15.6, 0.2, 6.2),
+      new THREE.BoxGeometry(18.6, 0.2, 6.2),
       new THREE.MeshStandardMaterial({ map: oppTex, color: 0xffffff, roughness: 0.78, metalness: 0.15 })
     );
     oppGround.position.set(0, -0.11, -3.12);
@@ -396,39 +399,33 @@ export class DuelArena3D {
     const plrTex = makeStoneFloorTexture('temple');
     plrTex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
     const plrGround = new THREE.Mesh(
-      new THREE.BoxGeometry(15.6, 0.2, 6.2),
+      new THREE.BoxGeometry(18.6, 0.2, 6.2),
       new THREE.MeshStandardMaterial({ map: plrTex, color: 0xffffff, roughness: 0.72, metalness: 0.1 })
     );
     plrGround.position.set(0, -0.11, 3.12);
     plrGround.receiveShadow = true;
     this.scene.add(plrGround);
 
+    // Symmetrical Dark Metallic Board Rim
+    const boardRim = new THREE.Mesh(
+      new THREE.BoxGeometry(19.1, 0.18, 12.9),
+      new THREE.MeshStandardMaterial({ color: 0x161b26, roughness: 0.5, metalness: 0.55 })
+    );
+    boardRim.position.set(0, -0.16, 0);
+    boardRim.receiveShadow = true;
+    this.scene.add(boardRim);
+
     // Glowing Midfield Rift Divider
     const divider = new THREE.Mesh(
-      new THREE.BoxGeometry(15.6, 0.04, 0.14),
+      new THREE.BoxGeometry(18.6, 0.04, 0.14),
       new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0ea5e9, emissiveIntensity: 1.8, roughness: 0.2 })
     );
     divider.position.set(0, 0.0, 0);
     this.scene.add(divider);
 
-    // Meadow & Magma Side Borders (matching Screenshot 1 split aesthetics)
-    const lavaStream = new THREE.Mesh(
-      new THREE.BoxGeometry(2.6, 0.08, 6.4),
-      new THREE.MeshStandardMaterial({ color: 0xea580c, emissive: 0xf97316, emissiveIntensity: 1.3, roughness: 0.3 })
-    );
-    lavaStream.position.set(-8.8, -0.14, -3.1);
-    this.scene.add(lavaStream);
-
-    const meadowBorder = new THREE.Mesh(
-      new THREE.BoxGeometry(2.6, 0.12, 6.4),
-      new THREE.MeshStandardMaterial({ color: 0x3f6212, roughness: 0.9, metalness: 0.02 })
-    );
-    meadowBorder.position.set(8.8, -0.12, 3.1);
-    this.scene.add(meadowBorder);
-
-    // Composite 3-part Avatar Pedestals (Left/Right Flanks)
-    this.buildAvatarObelisk(-6.9, 3.3, 0x34d399, 0x1e293b);
-    this.buildAvatarObelisk(6.9, -3.3, 0xf97316, 0x271513);
+    // Composite 3-part Avatar Pedestals (Outer Corners — zero overlap with zones)
+    this.buildAvatarObelisk(-9.1, 5.4, 0x34d399, 0x1e293b);
+    this.buildAvatarObelisk(9.1, -5.4, 0xf97316, 0x271513);
 
     // Build Zones: 5 Monster + 5 Spell/Trap per side
     const mTexPlayer = makeZoneTileTexture('#38bdf8', '⚔');
@@ -448,24 +445,29 @@ export class DuelArena3D {
     this.createZonePad('player', 'EXTRA_MONSTER', 0, EMZ_COLS[0], ROW_EMZ, emzTex);
     this.createZonePad('player', 'EXTRA_MONSTER', 1, EMZ_COLS[1], ROW_EMZ, emzTex);
 
-    // Field Spell & Pendulum Zones
+    // Field Spell Zones (Inner Wing, Monster Row)
     const fieldTex = makeZoneTileTexture('#2dd4bf', '❖');
-    const pendTex = makeZoneTileTexture('#a855f7', '◈');
-    this.createZonePad('player', 'FIELD', 0, -5.85, ROW_PLR_M, fieldTex);
-    this.createZonePad('opponent', 'FIELD', 0, 5.85, ROW_OPP_M, fieldTex);
-    this.createZonePad('player', 'PENDULUM_LEFT', 0, -5.85, ROW_PLR_ST, pendTex);
-    this.createZonePad('player', 'PENDULUM_RIGHT', 0, 5.85, ROW_PLR_ST, pendTex);
+    this.createZonePad('player', 'FIELD', 0, -COL_INNER_WING, ROW_PLR_M, fieldTex);
+    this.createZonePad('opponent', 'FIELD', 0, COL_INNER_WING, ROW_OPP_M, fieldTex);
+
+    // Dedicated Pendulum Zones (Outer Wings, zero overlap with Deck / Extra Deck)
+    const pendLeftTex = makeZoneTileTexture('#38bdf8', '◄◈');
+    const pendRightTex = makeZoneTileTexture('#f43f5e', '◈►');
+    this.createZonePad('player', 'PENDULUM_LEFT', 0, -COL_OUTER_WING, ROW_PENDULUM, pendLeftTex);
+    this.createZonePad('player', 'PENDULUM_RIGHT', 0, COL_OUTER_WING, ROW_PENDULUM, pendRightTex);
+    this.createZonePad('opponent', 'PENDULUM_LEFT', 0, COL_OUTER_WING, -ROW_PENDULUM, pendLeftTex);
+    this.createZonePad('opponent', 'PENDULUM_RIGHT', 0, -COL_OUTER_WING, -ROW_PENDULUM, pendRightTex);
 
     // Deck, Extra Deck, Graveyard, Banish Composite Pedestals
-    this.deckStacks.pDeck = this.buildDeckPedestal(5.95, 4.3, 'player', 'DECK', 0x38bdf8);
-    this.deckStacks.pExtra = this.buildDeckPedestal(-5.95, 4.3, 'player', 'EXTRA_DECK', 0xa855f7);
-    this.deckStacks.oDeck = this.buildDeckPedestal(-5.95, -4.3, 'opponent', 'DECK', 0xf97316);
-    this.deckStacks.oExtra = this.buildDeckPedestal(5.95, -4.3, 'opponent', 'EXTRA_DECK', 0xa855f7);
+    this.deckStacks.pDeck = this.buildDeckPedestal(COL_INNER_WING, ROW_PLR_ST, 'player', 'DECK', 0x38bdf8);
+    this.deckStacks.pExtra = this.buildDeckPedestal(-COL_INNER_WING, ROW_PLR_ST, 'player', 'EXTRA_DECK', 0xa855f7);
+    this.deckStacks.oDeck = this.buildDeckPedestal(-COL_INNER_WING, ROW_OPP_ST, 'opponent', 'DECK', 0xf97316);
+    this.deckStacks.oExtra = this.buildDeckPedestal(COL_INNER_WING, ROW_OPP_ST, 'opponent', 'EXTRA_DECK', 0xa855f7);
 
-    this.buildWellPedestal(5.95, 2.1, 'player', 'GRAVEYARD', 0x64748b);
-    this.buildWellPedestal(7.35, 1.0, 'player', 'BANISHED', 0x22d3ee);
-    this.buildWellPedestal(-5.95, -2.1, 'opponent', 'GRAVEYARD', 0x64748b);
-    this.buildWellPedestal(-7.35, -1.0, 'opponent', 'BANISHED', 0x22d3ee);
+    this.buildWellPedestal(COL_INNER_WING, ROW_PLR_M, 'player', 'GRAVEYARD', 0x64748b);
+    this.buildWellPedestal(COL_OUTER_WING, 1.15, 'player', 'BANISHED', 0x22d3ee);
+    this.buildWellPedestal(-COL_INNER_WING, ROW_OPP_M, 'opponent', 'GRAVEYARD', 0x64748b);
+    this.buildWellPedestal(-COL_OUTER_WING, -1.15, 'opponent', 'BANISHED', 0x22d3ee);
   }
 
   private buildAvatarObelisk(x: number, z: number, gemColor: number, baseColor: number): void {
@@ -515,7 +517,7 @@ export class DuelArena3D {
   ): THREE.Mesh {
     const group = new THREE.Group();
     group.position.set(x, 0, z);
-    group.rotation.y = owner === 'player' ? -0.18 : 0.18;
+    group.rotation.y = owner === 'player' ? 0 : Math.PI;
 
     const plinth = new THREE.Mesh(
       new THREE.BoxGeometry(1.62, 0.12, 2.2),
@@ -612,13 +614,25 @@ export class DuelArena3D {
       return new THREE.Vector3(EMZ_COLS[index] ?? 0, 0.12, ROW_EMZ);
     }
     if (zone === 'FIELD') {
-      return new THREE.Vector3(owner === 'player' ? -5.85 : 5.85, 0.12, owner === 'player' ? ROW_PLR_M : ROW_OPP_M);
+      return new THREE.Vector3(
+        owner === 'player' ? -COL_INNER_WING : COL_INNER_WING,
+        0.12,
+        owner === 'player' ? ROW_PLR_M : ROW_OPP_M
+      );
     }
     if (zone === 'PENDULUM_LEFT') {
-      return new THREE.Vector3(-5.85, 0.12, ROW_PLR_ST);
+      return new THREE.Vector3(
+        owner === 'player' ? -COL_OUTER_WING : COL_OUTER_WING,
+        0.12,
+        owner === 'player' ? ROW_PENDULUM : -ROW_PENDULUM
+      );
     }
     if (zone === 'PENDULUM_RIGHT') {
-      return new THREE.Vector3(5.85, 0.12, ROW_PLR_ST);
+      return new THREE.Vector3(
+        owner === 'player' ? COL_OUTER_WING : -COL_OUTER_WING,
+        0.12,
+        owner === 'player' ? ROW_PENDULUM : -ROW_PENDULUM
+      );
     }
     const x = BOARD_COLS[index] ?? 0;
     const z =
@@ -635,8 +649,8 @@ export class DuelArena3D {
   setMode(mode: 'TITLE' | 'DUEL'): void {
     this.camMode = mode;
     if (mode === 'DUEL') {
-      this.camTargetPos.set(0, 12.1, 10.7);
-      this.camLookTarget.set(0, 0, 0.45);
+      this.camTargetPos.set(0, 13.6, 12.2);
+      this.camLookTarget.set(0, 0, 0.35);
     }
   }
 

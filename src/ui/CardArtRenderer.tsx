@@ -321,8 +321,12 @@ export const CardArtRenderer: React.FC<CardArtRendererProps> = ({
               ))}
             </div>
           ) : card.category !== 'MONSTER' ? (
-            <span className="text-[8px] font-serif font-bold tracking-wide text-white/95 drop-shadow">
-              [{card.category === 'SPELL' ? 'MÁGICA' : 'TRAMPA'} · {SUBTYPE_LABELS_ES[card.subtype].toUpperCase()}]
+            <span className="text-[7px] font-serif font-bold tracking-wide text-white/95 drop-shadow truncate max-w-full">
+              {size === 'sm'
+                ? card.category === 'SPELL'
+                  ? '[MÁGICA]'
+                  : '[TRAMPA]'
+                : `[${card.category === 'SPELL' ? 'MÁGICA' : 'TRAMPA'} · ${SUBTYPE_LABELS_ES[card.subtype].toUpperCase()}]`}
             </span>
           ) : null}
         </div>
