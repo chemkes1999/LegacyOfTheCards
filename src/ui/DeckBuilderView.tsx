@@ -8,6 +8,8 @@ import {
   CopyPlus,
   Download,
   Layers,
+  LayoutGrid,
+  List,
   Minus,
   Plus,
   Save,
@@ -59,6 +61,7 @@ export const DeckBuilderView: React.FC<DeckBuilderViewProps> = ({
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<'ALL' | CardCategory>('ALL');
   const [page, setPage] = useState(0);
+  const [deckViewMode, setDeckViewMode] = useState<'GRID' | 'LIST'>('GRID');
   const [notice, setNotice] = useState<string | null>(null);
   const ydkInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -318,7 +321,7 @@ export const DeckBuilderView: React.FC<DeckBuilderViewProps> = ({
       )}
 
       {/* Main Split */}
-      <div className="mx-auto mt-4 w-full max-w-7xl flex-1 grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-5 min-h-0">
+      <div className="mx-auto mt-4 w-full max-w-7xl flex-1 grid grid-cols-1 lg:grid-cols-[1fr_490px] gap-5 min-h-0">
         {/* Left: Catalog */}
         <div className="flex flex-col min-h-0 space-y-3">
           <div className="flex flex-wrap items-center gap-2 shrink-0">
@@ -488,69 +491,153 @@ export const DeckBuilderView: React.FC<DeckBuilderViewProps> = ({
             </div>
           </div>
 
-          {/* Card lists */}
-          <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+          {/* Card lists / Visual Grid */}
+          <div className="flex items-center justify-between gap-2 shrink-0">
+            <span className="text-[11px] text-slate-400">
+              {deckViewMode === 'GRID'
+                ? 'Haz clic en una carta de tu mazo para quitar 1 copia'
+                : 'Vista agrupada por copias'}
+            </span>
+            <div className="flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900 p-0.5">
+              <button
+                type="button"
+                onClick={() => setDeckViewMode('GRID')}
+                className={`flex items-center gap-1 rounded px-2 py-1 text-[11px] font-semibold cursor-pointer ${
+                  deckViewMode === 'GRID'
+                    ? 'bg-amber-500 text-slate-950'
+                    : 'text-slate-300 hover:text-white'
+                }`}
+              >
+                <LayoutGrid className="h-3 w-3" />
+                <span>Cartas</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setDeckViewMode('LIST')}
+                className={`flex items-center gap-1 rounded px-2 py-1 text-[11px] font-semibold cursor-pointer ${
+                  deckViewMode === 'LIST'
+                    ? 'bg-amber-500 text-slate-950'
+                    : 'text-slate-300 hover:text-white'
+                }`}
+              >
+                <List className="h-3 w-3" />
+                <span>Lista</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto space-y-4 pr-1">
             <div>
-              <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+              <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">
                 Mazo Principal ({stats.mainCount})
               </h3>
-              <div className="space-y-1">
-                {groupedMain.map(({ def, count }) => (
-                  <div
-                    key={def.id}
-                    className="flex items-center justify-between gap-2 rounded-lg bg-slate-900/90 border border-slate-800/80 px-2.5 py-1.5 text-xs"
-                  >
-                    <span className="truncate text-slate-100 font-medium">{def.name}</span>
-                    <div className="flex items-center gap-1.5 shrink-0 font-mono-num">
-                      <span className="text-amber-300 font-bold">x{count}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveCard(def.id)}
-                        aria-label={`Quitar ${def.name}`}
-                        className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-300 hover:bg-rose-900 hover:text-white cursor-pointer"
-                      >
-                        -
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleAddCard(def.id)}
-                        disabled={count >= MAX_COPIES_PER_CARD}
-                        aria-label={`Añadir ${def.name}`}
-                        className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-300 hover:bg-amber-500 hover:text-slate-950 disabled:opacity-35 cursor-pointer"
-                      >
-                        +
-                      </button>
+              {deckViewMode === 'GRID' ? (
+                <div className="grid grid-cols-5 sm:grid-cols-6 gap-1.5">
+                  {[...editingDeck.mainDeckIds]
+                    .map((id, idx) => ({ id, idx, def: CardManager.getDef(id) }))
+                    .sort((a, b) => {
+                      const catOrder = { MONSTER: 0, SPELL: 1, TRAP: 2 };
+                      const cDiff = catOrder[a.def.category] - catOrder[b.def.category];
+                      if (cDiff !== 0) return cDiff;
+                      return b.def.level - a.def.level || a.def.name.localeCompare(b.def.name);
+                    })
+                    .map(({ id, idx, def }) => (
+                      <div key={`${id}_${idx}`} className="group relative flex justify-center" title={`${def.name} — clic para quitar`}>
+                        <CardArtRenderer
+                          card={def}
+                          size="xs"
+                          onClick={() => handleRemoveCard(id)}
+                        />
+                        <span className="pointer-events-none absolute top-0.5 right-0.5 hidden group-hover:flex h-4 w-4 items-center justify-center rounded-full bg-rose-600 text-[10px] font-bold text-white shadow">
+                          ×
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {groupedMain.map(({ def, count }) => (
+                    <div
+                      key={def.id}
+                      className="flex items-center justify-between gap-2 rounded-lg bg-slate-900/90 border border-slate-800/80 px-2.5 py-1.5 text-xs"
+                    >
+                      <span className="truncate text-slate-100 font-medium">{def.name}</span>
+                      <div className="flex items-center gap-1.5 shrink-0 font-mono-num">
+                        <span className="text-amber-300 font-bold">x{count}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveCard(def.id)}
+                          aria-label={`Quitar ${def.name}`}
+                          className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-300 hover:bg-rose-900 hover:text-white cursor-pointer"
+                        >
+                          -
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleAddCard(def.id)}
+                          disabled={count >= MAX_COPIES_PER_CARD}
+                          aria-label={`Añadir ${def.name}`}
+                          className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-300 hover:bg-amber-500 hover:text-slate-950 disabled:opacity-35 cursor-pointer"
+                        >
+                          +
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div>
-              <h3 className="text-[11px] font-bold uppercase tracking-wider text-purple-300 mb-1.5">
-                Deck Extra ({stats.extraCount})
+              <h3 className="text-[11px] font-bold uppercase tracking-wider text-purple-300 mb-2">
+                Deck Extra ({stats.extraCount}/{EXTRA_DECK_MAX})
               </h3>
-              <div className="space-y-1">
-                {groupedExtra.map(({ def, count }) => (
-                  <div
-                    key={def.id}
-                    className="flex items-center justify-between gap-2 rounded-lg bg-slate-900/90 border border-purple-900/40 px-2.5 py-1.5 text-xs"
-                  >
-                    <span className="truncate text-slate-100 font-medium">{def.name}</span>
-                    <div className="flex items-center gap-1.5 shrink-0 font-mono-num">
-                      <span className="text-purple-300 font-bold">x{count}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveCard(def.id)}
-                        aria-label={`Quitar ${def.name}`}
-                        className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-300 hover:bg-rose-900 hover:text-white cursor-pointer"
-                      >
-                        -
-                      </button>
+              {deckViewMode === 'GRID' ? (
+                <div className="grid grid-cols-5 sm:grid-cols-6 gap-1.5 rounded-xl border border-purple-900/40 bg-purple-950/15 p-2">
+                  {editingDeck.extraDeckIds.map((id, idx) => {
+                    const def = CardManager.getDef(id);
+                    return (
+                      <div key={`${id}_${idx}`} className="group relative flex justify-center" title={`${def.name} — clic para quitar`}>
+                        <CardArtRenderer
+                          card={def}
+                          size="xs"
+                          onClick={() => handleRemoveCard(id)}
+                        />
+                        <span className="pointer-events-none absolute top-0.5 right-0.5 hidden group-hover:flex h-4 w-4 items-center justify-center rounded-full bg-rose-600 text-[10px] font-bold text-white shadow">
+                          ×
+                        </span>
+                      </div>
+                    );
+                  })}
+                  {editingDeck.extraDeckIds.length === 0 && (
+                    <span className="col-span-full text-center text-[11px] text-slate-500 py-2">
+                      Sin cartas en el Deck Extra
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {groupedExtra.map(({ def, count }) => (
+                    <div
+                      key={def.id}
+                      className="flex items-center justify-between gap-2 rounded-lg bg-slate-900/90 border border-purple-900/40 px-2.5 py-1.5 text-xs"
+                    >
+                      <span className="truncate text-slate-100 font-medium">{def.name}</span>
+                      <div className="flex items-center gap-1.5 shrink-0 font-mono-num">
+                        <span className="text-purple-300 font-bold">x{count}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveCard(def.id)}
+                          aria-label={`Quitar ${def.name}`}
+                          className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-300 hover:bg-rose-900 hover:text-white cursor-pointer"
+                        >
+                          -
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
