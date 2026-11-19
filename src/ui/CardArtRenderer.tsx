@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { CardDefinition } from '../types/tcg';
 import { ATTRIBUTE_LABELS_ES, SUBTYPE_LABELS_ES } from '../engine/CardManager';
 
@@ -53,6 +53,13 @@ export const CardArtRenderer: React.FC<CardArtRendererProps> = ({
   onMouseEnter,
   className = '',
 }) => {
+  const artSrc = card.imageUrl ?? card.bossImage;
+  const [imgFailed, setImgFailed] = useState(false);
+
+  useEffect(() => {
+    setImgFailed(false);
+  }, [artSrc]);
+
   const frameKey = card.category === 'MONSTER' ? card.subtype : card.category;
   const frame = FRAME_STYLES[frameKey] ?? FRAME_STYLES.effect;
 
@@ -170,11 +177,13 @@ export const CardArtRenderer: React.FC<CardArtRendererProps> = ({
 
       {/* Artwork Frame */}
       <div className="relative flex-1 my-0.5 rounded-sm overflow-hidden border border-slate-900 bg-slate-950">
-        {card.bossImage ? (
+        {artSrc && !imgFailed ? (
           <img
-            src={card.bossImage}
+            src={artSrc}
             alt={card.name}
+            loading="lazy"
             referrerPolicy="no-referrer"
+            onError={() => setImgFailed(true)}
             className="w-full h-full object-cover"
           />
         ) : (

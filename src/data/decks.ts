@@ -112,6 +112,45 @@ export const STARTER_EXTRA_DECK: string[] = buildDeckList([
   ['m_link_titan', 1],
 ]);
 
+export const CLASSIC_YGO_MAIN: string[] = buildDeckList([
+  ['ygo_blue_eyes', 2],
+  ['ygo_dark_magician', 2],
+  ['ygo_red_eyes', 1],
+  ['ygo_summoned_skull', 2],
+  ['ygo_celtic_guardian', 2],
+  ['ygo_mystical_elf', 2],
+  ['ygo_la_jinn', 2],
+  ['ygo_vorse_raider', 3],
+  ['ygo_gemini_elf', 3],
+  ['ygo_lustre_dragon', 2],
+  ['ygo_dark_magician_girl', 1],
+  ['ygo_buster_blader', 1],
+  ['ygo_man_eater_bug', 2],
+  ['ygo_magician_of_faith', 2],
+  ['ygo_junk_synchron', 2],
+  ['ygo_kuriboh', 1],
+  // 30 Monsters
+  ['ygo_pot_of_greed', 1],
+  ['ygo_raigeki', 1],
+  ['ygo_monster_reborn', 1],
+  ['ygo_polymerization', 2],
+  ['ygo_mst', 1],
+  ['ygo_feather_duster', 1],
+  ['ygo_axe_of_despair', 1],
+  // 8 Spells
+  ['ygo_mirror_force', 1],
+  ['ygo_magic_cylinder', 1],
+  // 2 Traps -> Total = 40 cards!
+]);
+
+export const CLASSIC_YGO_EXTRA: string[] = [
+  'ygo_blue_eyes_ultimate',
+  'ygo_dark_paladin',
+  'ygo_stardust_dragon',
+  'ygo_utopia',
+  'ygo_decode_talker',
+];
+
 export const DEFAULT_SAVED_DECKS: SavedDeck[] = [
   {
     id: 'deck_legacy_dragon',
@@ -125,6 +164,13 @@ export const DEFAULT_SAVED_DECKS: SavedDeck[] = [
     name: 'Vanguardia del Caos',
     mainDeckIds: CHAOS_STARTER_MAIN,
     extraDeckIds: STARTER_EXTRA_DECK,
+    updatedAt: 1730000000000,
+  },
+  {
+    id: 'deck_classic_legends',
+    name: 'Leyendas Clásicas (YGOPRODeck)',
+    mainDeckIds: CLASSIC_YGO_MAIN,
+    extraDeckIds: CLASSIC_YGO_EXTRA,
     updatedAt: 1730000000000,
   },
 ];

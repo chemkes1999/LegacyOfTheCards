@@ -33,8 +33,24 @@ export type MonsterRace =
   | 'Fairy'
   | 'Cyberse'
   | 'Beast'
+  | 'Beast-Warrior'
   | 'Pyro'
-  | 'Aqua';
+  | 'Aqua'
+  | 'Zombie'
+  | 'Plant'
+  | 'Insect'
+  | 'Rock'
+  | 'Winged Beast'
+  | 'Thunder'
+  | 'Sea Serpent'
+  | 'Reptile'
+  | 'Dinosaur'
+  | 'Fish'
+  | 'Psychic'
+  | 'Wyrm'
+  | 'Divine-Beast'
+  | 'Creator-God'
+  | 'Illusion';
 
 export type Rarity = 'N' | 'R' | 'SR' | 'UR';
 
@@ -113,6 +129,7 @@ export interface CardEffectDef {
 
 export interface CardDefinition {
   id: string;
+  ygoprodeckId?: number;
   name: string;
   category: CardCategory;
   subtype: CardSubtype;
@@ -129,6 +146,7 @@ export interface CardDefinition {
   description: string;
   rarity: Rarity;
   bossImage?: string; // Optional high-res generated artwork path
+  imageUrl?: string; // Cached local artwork (/cards/<id>.jpg) or remote YGOPRODeck URL
   artPalette: [string, string, string]; // Primary, secondary, glow colors for procedural card art
   artMotif: 'dragon' | 'knight' | 'mage' | 'mech' | 'beast' | 'seraph' | 'fiend' | 'spell' | 'trap' | 'field';
   effects: CardEffectDef[];

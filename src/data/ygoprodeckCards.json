@@ -1,0 +1,1023 @@
+[
+  {
+    "id": "ygo_blue_eyes",
+    "ygoprodeckId": 89631139,
+    "name": "Dragón Blanco de Ojos Azules",
+    "category": "MONSTER",
+    "subtype": "normal",
+    "attribute": "LIGHT",
+    "race": "Dragon",
+    "level": 8,
+    "atk": 3000,
+    "def": 2500,
+    "isExtraDeck": false,
+    "description": "Este legendario dragón es una poderosa máquina de destrucción. Prácticamente invencible, muy pocos se han enfrentado a esta impresionante criatura y vivido para contarlo.",
+    "rarity": "UR",
+    "imageUrl": "/cards/89631139.jpg",
+    "artPalette": [
+      "#eab308",
+      "#422006",
+      "#fef08a"
+    ],
+    "artMotif": "dragon",
+    "effects": []
+  },
+  {
+    "id": "ygo_dark_magician",
+    "ygoprodeckId": 46986414,
+    "name": "Mago Oscuro",
+    "category": "MONSTER",
+    "subtype": "normal",
+    "attribute": "DARK",
+    "race": "Spellcaster",
+    "level": 7,
+    "atk": 2500,
+    "def": 2100,
+    "isExtraDeck": false,
+    "description": "El más grande de los magos en cuanto al ataque y la defensa.",
+    "rarity": "UR",
+    "imageUrl": "/cards/46986414.jpg",
+    "artPalette": [
+      "#7e22ce",
+      "#1e1b4b",
+      "#c084fc"
+    ],
+    "artMotif": "mage",
+    "effects": []
+  },
+  {
+    "id": "ygo_red_eyes",
+    "ygoprodeckId": 74677422,
+    "name": "Dragón Negro de Ojos Rojos",
+    "category": "MONSTER",
+    "subtype": "normal",
+    "attribute": "DARK",
+    "race": "Dragon",
+    "level": 7,
+    "atk": 2400,
+    "def": 2000,
+    "isExtraDeck": false,
+    "description": "Un dragón feroz con un ataque mortal.",
+    "rarity": "UR",
+    "imageUrl": "/cards/74677422.jpg",
+    "artPalette": [
+      "#7e22ce",
+      "#1e1b4b",
+      "#c084fc"
+    ],
+    "artMotif": "dragon",
+    "effects": []
+  },
+  {
+    "id": "ygo_summoned_skull",
+    "ygoprodeckId": 70781052,
+    "name": "Cráneo Convocado",
+    "category": "MONSTER",
+    "subtype": "normal",
+    "attribute": "DARK",
+    "race": "Fiend",
+    "level": 6,
+    "atk": 2500,
+    "def": 1200,
+    "isExtraDeck": false,
+    "description": "Un demonio con poderes oscuros para confundir a los enemigos. Entre los monstruos de tipo Demonio, es uno de los más fuertes.",
+    "rarity": "SR",
+    "imageUrl": "/cards/70781052.jpg",
+    "artPalette": [
+      "#7e22ce",
+      "#1e1b4b",
+      "#c084fc"
+    ],
+    "artMotif": "fiend",
+    "effects": []
+  },
+  {
+    "id": "ygo_celtic_guardian",
+    "ygoprodeckId": 91152256,
+    "name": "Guardián Celta",
+    "category": "MONSTER",
+    "subtype": "normal",
+    "attribute": "EARTH",
+    "race": "Warrior",
+    "level": 4,
+    "atk": 1400,
+    "def": 1200,
+    "isExtraDeck": false,
+    "description": "Un elfo que aprendió a esgrimir una espada, desconcierta a los enemigos con ataques relámpago.",
+    "rarity": "R",
+    "imageUrl": "/cards/91152256.jpg",
+    "artPalette": [
+      "#a16207",
+      "#292524",
+      "#fcd34d"
+    ],
+    "artMotif": "knight",
+    "effects": []
+  },
+  {
+    "id": "ygo_mystical_elf",
+    "ygoprodeckId": 15025844,
+    "name": "Elfa Mística",
+    "category": "MONSTER",
+    "subtype": "normal",
+    "attribute": "LIGHT",
+    "race": "Spellcaster",
+    "level": 4,
+    "atk": 800,
+    "def": 2000,
+    "isExtraDeck": false,
+    "description": "Una elfa delicada que carece de ofensiva, pero tiene una defensa formidable respaldada por poderes místicos.",
+    "rarity": "R",
+    "imageUrl": "/cards/15025844.jpg",
+    "artPalette": [
+      "#eab308",
+      "#422006",
+      "#fef08a"
+    ],
+    "artMotif": "mage",
+    "effects": []
+  },
+  {
+    "id": "ygo_la_jinn",
+    "ygoprodeckId": 58192742,
+    "name": "La Jinn el Genio Místico de la Lámpara",
+    "category": "MONSTER",
+    "subtype": "normal",
+    "attribute": "EARTH",
+    "race": "Insect",
+    "level": 1,
+    "atk": 300,
+    "def": 200,
+    "isExtraDeck": false,
+    "description": "Un genio de la lámpara que está a entera disposición de su amo.",
+    "rarity": "R",
+    "imageUrl": "/cards/58192742.jpg",
+    "artPalette": [
+      "#a16207",
+      "#292524",
+      "#fcd34d"
+    ],
+    "artMotif": "knight",
+    "effects": []
+  },
+  {
+    "id": "ygo_vorse_raider",
+    "ygoprodeckId": 66672569,
+    "name": "Saqueador Vorse",
+    "category": "MONSTER",
+    "subtype": "normal",
+    "attribute": "DARK",
+    "race": "Zombie",
+    "level": 3,
+    "atk": 1600,
+    "def": 0,
+    "isExtraDeck": false,
+    "description": "Este perverso Guerrero-Bestia hace todo tipo de maldades con su hacha. ¡Cuidado con su golpe feroz!",
+    "rarity": "SR",
+    "imageUrl": "/cards/66672569.jpg",
+    "artPalette": [
+      "#7e22ce",
+      "#1e1b4b",
+      "#c084fc"
+    ],
+    "artMotif": "fiend",
+    "effects": []
+  },
+  {
+    "id": "ygo_gemini_elf",
+    "ygoprodeckId": 4031928,
+    "name": "Elfas Géminis",
+    "category": "SPELL",
+    "subtype": "normal",
+    "level": 0,
+    "atk": 0,
+    "def": 0,
+    "isExtraDeck": false,
+    "description": "Dos hermanas elfas que alternan sus ataques con perfecta sincronía.",
+    "rarity": "SR",
+    "imageUrl": "/cards/4031928.jpg",
+    "artPalette": [
+      "#0d9488",
+      "#134e4a",
+      "#5eead4"
+    ],
+    "artMotif": "spell",
+    "effects": []
+  },
+  {
+    "id": "ygo_lustre_dragon",
+    "ygoprodeckId": 74191942,
+    "name": "Dragón Brillante",
+    "category": "SPELL",
+    "subtype": "normal",
+    "level": 0,
+    "atk": 0,
+    "def": 0,
+    "isExtraDeck": false,
+    "description": "Un hermoso dragón cubierto de zafiros que ataca con gran velocidad.",
+    "rarity": "R",
+    "imageUrl": "/cards/74191942.jpg",
+    "artPalette": [
+      "#0d9488",
+      "#134e4a",
+      "#5eead4"
+    ],
+    "artMotif": "spell",
+    "effects": []
+  },
+  {
+    "id": "ygo_dark_magician_girl",
+    "ygoprodeckId": 38033121,
+    "name": "Chica Maga Oscura",
+    "category": "MONSTER",
+    "subtype": "effect",
+    "attribute": "DARK",
+    "race": "Spellcaster",
+    "level": 6,
+    "atk": 2000,
+    "def": 1700,
+    "isExtraDeck": false,
+    "description": "Una vez por turno: puedes activar este efecto para aumentar su ATK en +300 e infligir 300 de daño al rival.",
+    "rarity": "UR",
+    "imageUrl": "/cards/38033121.jpg",
+    "artPalette": [
+      "#7e22ce",
+      "#1e1b4b",
+      "#c084fc"
+    ],
+    "artMotif": "mage",
+    "effects": [
+      {
+        "id": "eff_ygo_dmg_boost",
+        "label": "Magia Oscura (+300 ATK / 300 daño)",
+        "description": "Gana +300 ATK e inflige 300 de daño al oponente.",
+        "trigger": "IGNITION",
+        "spellSpeed": 1,
+        "targetRequirement": "OWN_MONSTER",
+        "oncePerTurn": true,
+        "operations": [
+          {
+            "type": "MODIFY_STATS",
+            "atkDelta": 300,
+            "defDelta": 0
+          },
+          {
+            "type": "DAMAGE_OPPONENT",
+            "value": 300
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ygo_buster_blader",
+    "ygoprodeckId": 78193831,
+    "name": "Buster Blader",
+    "category": "MONSTER",
+    "subtype": "effect",
+    "attribute": "EARTH",
+    "race": "Warrior",
+    "level": 7,
+    "atk": 2600,
+    "def": 2300,
+    "isExtraDeck": false,
+    "description": "Una vez por turno: fortalece su espada ganando +500 ATK.",
+    "rarity": "SR",
+    "imageUrl": "/cards/78193831.jpg",
+    "artPalette": [
+      "#a16207",
+      "#292524",
+      "#fcd34d"
+    ],
+    "artMotif": "knight",
+    "effects": [
+      {
+        "id": "eff_ygo_buster_boost",
+        "label": "Filo Matadragones (+500 ATK)",
+        "description": "Aumenta el ATK de un monstruo propio en +500.",
+        "trigger": "IGNITION",
+        "spellSpeed": 1,
+        "targetRequirement": "OWN_MONSTER",
+        "oncePerTurn": true,
+        "operations": [
+          {
+            "type": "MODIFY_STATS",
+            "atkDelta": 500,
+            "defDelta": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ygo_man_eater_bug",
+    "ygoprodeckId": 54652250,
+    "name": "Insecto Come-Hombres",
+    "category": "MONSTER",
+    "subtype": "effect",
+    "attribute": "EARTH",
+    "race": "Insect",
+    "level": 2,
+    "atk": 450,
+    "def": 600,
+    "isExtraDeck": false,
+    "description": "Una vez por turno: selecciona 1 monstruo del oponente y destrúyelo.",
+    "rarity": "R",
+    "imageUrl": "/cards/54652250.jpg",
+    "artPalette": [
+      "#a16207",
+      "#292524",
+      "#fcd34d"
+    ],
+    "artMotif": "knight",
+    "effects": [
+      {
+        "id": "eff_ygo_meb_destroy",
+        "label": "Destruir Monstruo Rival",
+        "description": "Destruye 1 monstruo que controle el oponente.",
+        "trigger": "IGNITION",
+        "spellSpeed": 1,
+        "targetRequirement": "OPPONENT_MONSTER",
+        "oncePerTurn": true,
+        "operations": [
+          {
+            "type": "DESTROY_TARGET"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ygo_magician_of_faith",
+    "ygoprodeckId": 31560081,
+    "name": "Mago de la Fe",
+    "category": "MONSTER",
+    "subtype": "effect",
+    "attribute": "LIGHT",
+    "race": "Spellcaster",
+    "level": 1,
+    "atk": 300,
+    "def": 400,
+    "isExtraDeck": false,
+    "description": "Una vez por turno: añade 1 Carta Mágica de tu Deck a tu mano.",
+    "rarity": "R",
+    "imageUrl": "/cards/31560081.jpg",
+    "artPalette": [
+      "#eab308",
+      "#422006",
+      "#fef08a"
+    ],
+    "artMotif": "mage",
+    "effects": [
+      {
+        "id": "eff_ygo_mof_search",
+        "label": "Recuperar Mágica",
+        "description": "Añade 1 Carta Mágica de tu Deck a tu mano.",
+        "trigger": "IGNITION",
+        "spellSpeed": 1,
+        "targetRequirement": "NONE",
+        "oncePerTurn": true,
+        "operations": [
+          {
+            "type": "SEARCH_TO_HAND",
+            "filterCategory": "SPELL"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ygo_junk_synchron",
+    "ygoprodeckId": 63977008,
+    "name": "Sincronizador de Basura",
+    "category": "MONSTER",
+    "subtype": "effect",
+    "attribute": "DARK",
+    "race": "Warrior",
+    "level": 3,
+    "atk": 1300,
+    "def": 500,
+    "isTuner": true,
+    "isExtraDeck": false,
+    "description": "Cantante. Una vez por turno: Invoca de Modo Especial 1 monstruo desde tu Cementerio.",
+    "rarity": "SR",
+    "imageUrl": "/cards/63977008.jpg",
+    "artPalette": [
+      "#7e22ce",
+      "#1e1b4b",
+      "#c084fc"
+    ],
+    "artMotif": "knight",
+    "effects": [
+      {
+        "id": "eff_ygo_junk_revive",
+        "label": "Revivir del Cementerio",
+        "description": "Invoca Especialmente 1 monstruo desde tu Cementerio.",
+        "trigger": "IGNITION",
+        "spellSpeed": 1,
+        "targetRequirement": "OWN_GY_MONSTER",
+        "oncePerTurn": true,
+        "operations": [
+          {
+            "type": "SPECIAL_SUMMON_FROM_GY"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ygo_kuriboh",
+    "ygoprodeckId": 40640057,
+    "name": "Kuriboh",
+    "category": "MONSTER",
+    "subtype": "effect",
+    "attribute": "DARK",
+    "race": "Fiend",
+    "level": 1,
+    "atk": 300,
+    "def": 200,
+    "isExtraDeck": false,
+    "description": "Una vez por turno: recupera 800 LP para protegerte.",
+    "rarity": "R",
+    "imageUrl": "/cards/40640057.jpg",
+    "artPalette": [
+      "#7e22ce",
+      "#1e1b4b",
+      "#c084fc"
+    ],
+    "artMotif": "fiend",
+    "effects": [
+      {
+        "id": "eff_ygo_kuriboh_heal",
+        "label": "Escudo Kuriboh (+800 LP)",
+        "description": "Recupera 800 Puntos de Vida.",
+        "trigger": "IGNITION",
+        "spellSpeed": 1,
+        "targetRequirement": "NONE",
+        "oncePerTurn": true,
+        "operations": [
+          {
+            "type": "HEAL_SELF",
+            "value": 800
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ygo_blue_eyes_ultimate",
+    "ygoprodeckId": 23995346,
+    "name": "Dragón de Ojos Azules Definitivo",
+    "category": "MONSTER",
+    "subtype": "fusion",
+    "attribute": "LIGHT",
+    "race": "Dragon",
+    "level": 12,
+    "atk": 4500,
+    "def": 3800,
+    "isExtraDeck": true,
+    "description": "Fusión de monstruos legendarios. Su poder de 4500 ATK arrasa el campo.",
+    "rarity": "UR",
+    "imageUrl": "/cards/23995346.jpg",
+    "artPalette": [
+      "#eab308",
+      "#422006",
+      "#fef08a"
+    ],
+    "artMotif": "dragon",
+    "effects": []
+  },
+  {
+    "id": "ygo_dark_paladin",
+    "ygoprodeckId": 98502113,
+    "name": "Paladín Oscuro",
+    "category": "MONSTER",
+    "subtype": "fusion",
+    "attribute": "DARK",
+    "race": "Spellcaster",
+    "level": 8,
+    "atk": 2900,
+    "def": 2400,
+    "isExtraDeck": true,
+    "description": "Fusión. Una vez por turno: destruye 1 Mágica o Trampa rival e inflige 500 de daño.",
+    "rarity": "UR",
+    "imageUrl": "/cards/98502113.jpg",
+    "artPalette": [
+      "#7e22ce",
+      "#1e1b4b",
+      "#c084fc"
+    ],
+    "artMotif": "mage",
+    "effects": [
+      {
+        "id": "eff_ygo_dark_paladin",
+        "label": "Sello Arcano",
+        "description": "Destruye 1 Mágica/Trampa rival e inflige 500 de daño.",
+        "trigger": "IGNITION",
+        "spellSpeed": 1,
+        "targetRequirement": "OPPONENT_SPELL_TRAP",
+        "oncePerTurn": true,
+        "operations": [
+          {
+            "type": "DESTROY_TARGET"
+          },
+          {
+            "type": "DAMAGE_OPPONENT",
+            "value": 500
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ygo_stardust_dragon",
+    "ygoprodeckId": 44508094,
+    "name": "Dragón de Polvo de Estrellas",
+    "category": "MONSTER",
+    "subtype": "synchro",
+    "attribute": "WIND",
+    "race": "Dragon",
+    "level": 8,
+    "atk": 2500,
+    "def": 2000,
+    "isExtraDeck": true,
+    "description": "Sincronía Nivel 8. Una vez por turno: otorga inmunidad a destrucción a un monstruo propio.",
+    "rarity": "UR",
+    "imageUrl": "/cards/44508094.jpg",
+    "artPalette": [
+      "#059669",
+      "#022c22",
+      "#6ee7b7"
+    ],
+    "artMotif": "dragon",
+    "effects": [
+      {
+        "id": "eff_ygo_stardust",
+        "label": "Escudo Estelar",
+        "description": "Hace inmune a destrucción a 1 monstruo propio.",
+        "trigger": "IGNITION",
+        "spellSpeed": 1,
+        "targetRequirement": "OWN_MONSTER",
+        "oncePerTurn": true,
+        "operations": [
+          {
+            "type": "APPLY_RESTRICTION",
+            "restriction": "IMMUNE_DESTROY"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ygo_utopia",
+    "ygoprodeckId": 84013237,
+    "name": "Número 39: Utopía",
+    "category": "MONSTER",
+    "subtype": "xyz",
+    "attribute": "LIGHT",
+    "race": "Warrior",
+    "level": 4,
+    "atk": 2500,
+    "def": 2000,
+    "isExtraDeck": true,
+    "description": "Xyz Rango 4. Desacopla 1 Material Xyz para ganar +500 ATK.",
+    "rarity": "UR",
+    "imageUrl": "/cards/84013237.jpg",
+    "artPalette": [
+      "#eab308",
+      "#422006",
+      "#fef08a"
+    ],
+    "artMotif": "knight",
+    "effects": [
+      {
+        "id": "eff_ygo_utopia_boost",
+        "label": "Espada de la Esperanza (+500 ATK)",
+        "description": "Desacopla 1 Material Xyz y gana +500 ATK.",
+        "trigger": "IGNITION",
+        "spellSpeed": 1,
+        "targetRequirement": "NONE",
+        "oncePerTurn": true,
+        "requiresXyzMaterial": 1,
+        "operations": [
+          {
+            "type": "DETACH_XYZ_BOOST",
+            "atkDelta": 500
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ygo_decode_talker",
+    "ygoprodeckId": 1861629,
+    "name": "Decodificador Hablador",
+    "category": "MONSTER",
+    "subtype": "link",
+    "attribute": "DARK",
+    "race": "Cyberse",
+    "level": 3,
+    "atk": 2300,
+    "def": 0,
+    "linkArrows": [
+      "T",
+      "BL",
+      "BR"
+    ],
+    "isExtraDeck": true,
+    "description": "Enlace-3. Una vez por turno: gana +500 ATK.",
+    "rarity": "UR",
+    "imageUrl": "/cards/1861629.jpg",
+    "artPalette": [
+      "#7e22ce",
+      "#1e1b4b",
+      "#c084fc"
+    ],
+    "artMotif": "mech",
+    "effects": [
+      {
+        "id": "eff_ygo_decode_boost",
+        "label": "Sobrecarga de Enlace (+500 ATK)",
+        "description": "Aumenta en +500 el ATK de un monstruo propio.",
+        "trigger": "IGNITION",
+        "spellSpeed": 1,
+        "targetRequirement": "OWN_MONSTER",
+        "oncePerTurn": true,
+        "operations": [
+          {
+            "type": "MODIFY_STATS",
+            "atkDelta": 500,
+            "defDelta": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ygo_pot_of_greed",
+    "ygoprodeckId": 55144522,
+    "name": "Olla de la Codicia",
+    "category": "SPELL",
+    "subtype": "normal",
+    "level": 0,
+    "atk": 0,
+    "def": 0,
+    "isExtraDeck": false,
+    "description": "Roba 2 cartas de tu Deck.",
+    "rarity": "SR",
+    "imageUrl": "/cards/55144522.jpg",
+    "artPalette": [
+      "#0d9488",
+      "#134e4a",
+      "#5eead4"
+    ],
+    "artMotif": "spell",
+    "effects": [
+      {
+        "id": "eff_ygo_pot",
+        "label": "Robar 2 cartas",
+        "description": "Roba 2 cartas de tu Deck.",
+        "trigger": "IGNITION",
+        "spellSpeed": 1,
+        "targetRequirement": "NONE",
+        "operations": [
+          {
+            "type": "DRAW",
+            "value": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ygo_raigeki",
+    "ygoprodeckId": 12580477,
+    "name": "Raigeki",
+    "category": "SPELL",
+    "subtype": "normal",
+    "level": 0,
+    "atk": 0,
+    "def": 0,
+    "isExtraDeck": false,
+    "description": "Destruye todos los monstruos que controle tu adversario.",
+    "rarity": "UR",
+    "imageUrl": "/cards/12580477.jpg",
+    "artPalette": [
+      "#0d9488",
+      "#134e4a",
+      "#5eead4"
+    ],
+    "artMotif": "spell",
+    "effects": [
+      {
+        "id": "eff_ygo_raigeki",
+        "label": "Destruir Monstruos Rivales",
+        "description": "Destruye todos los monstruos del oponente.",
+        "trigger": "IGNITION",
+        "spellSpeed": 1,
+        "targetRequirement": "NONE",
+        "condition": {
+          "minOpponentMonsters": 1
+        },
+        "operations": [
+          {
+            "type": "DESTROY_ALL_OPPONENT_MONSTERS"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ygo_monster_reborn",
+    "ygoprodeckId": 83764718,
+    "name": "Monstruo Renacido",
+    "category": "SPELL",
+    "subtype": "normal",
+    "level": 0,
+    "atk": 0,
+    "def": 0,
+    "isExtraDeck": false,
+    "description": "Selecciona 1 monstruo en tu Cementerio e Invócalo de Modo Especial.",
+    "rarity": "UR",
+    "imageUrl": "/cards/83764718.jpg",
+    "artPalette": [
+      "#0d9488",
+      "#134e4a",
+      "#5eead4"
+    ],
+    "artMotif": "spell",
+    "effects": [
+      {
+        "id": "eff_ygo_reborn",
+        "label": "Revivir Monstruo",
+        "description": "Invoca de Modo Especial 1 monstruo de tu Cementerio.",
+        "trigger": "IGNITION",
+        "spellSpeed": 1,
+        "targetRequirement": "OWN_GY_MONSTER",
+        "operations": [
+          {
+            "type": "SPECIAL_SUMMON_FROM_GY"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ygo_polymerization",
+    "ygoprodeckId": 24094653,
+    "name": "Polimerización",
+    "category": "SPELL",
+    "subtype": "normal",
+    "level": 0,
+    "atk": 0,
+    "def": 0,
+    "isExtraDeck": false,
+    "description": "Invoca por Fusión 1 Monstruo de Fusión de tu Deck Extra usando 2 monstruos de tu mano o campo.",
+    "rarity": "SR",
+    "imageUrl": "/cards/24094653.jpg",
+    "artPalette": [
+      "#0d9488",
+      "#134e4a",
+      "#5eead4"
+    ],
+    "artMotif": "spell",
+    "effects": [
+      {
+        "id": "eff_ygo_poly",
+        "label": "Invocación por Fusión",
+        "description": "Fusiona 2 monstruos en 1 Monstruo de Fusión del Deck Extra.",
+        "trigger": "IGNITION",
+        "spellSpeed": 1,
+        "targetRequirement": "NONE",
+        "operations": [
+          {
+            "type": "FUSION_SUMMON"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ygo_mst",
+    "ygoprodeckId": 5318639,
+    "name": "Tifón del Espacio Místico",
+    "category": "SPELL",
+    "subtype": "quickplay",
+    "level": 0,
+    "atk": 0,
+    "def": 0,
+    "isExtraDeck": false,
+    "description": "Mágica de Juego Rápido. Destruye 1 Carta Mágica o de Trampa del oponente.",
+    "rarity": "SR",
+    "imageUrl": "/cards/5318639.jpg",
+    "artPalette": [
+      "#0d9488",
+      "#134e4a",
+      "#5eead4"
+    ],
+    "artMotif": "spell",
+    "effects": [
+      {
+        "id": "eff_ygo_mst",
+        "label": "Destruir Mágica/Trampa",
+        "description": "Destruye 1 Carta Mágica o de Trampa rival.",
+        "trigger": "QUICK",
+        "spellSpeed": 2,
+        "targetRequirement": "OPPONENT_SPELL_TRAP",
+        "operations": [
+          {
+            "type": "DESTROY_TARGET"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ygo_feather_duster",
+    "ygoprodeckId": 18144506,
+    "name": "Plumero de la Arpía",
+    "category": "SPELL",
+    "subtype": "normal",
+    "level": 0,
+    "atk": 0,
+    "def": 0,
+    "isExtraDeck": false,
+    "description": "Destruye todas las Cartas Mágicas y de Trampa que controle tu adversario.",
+    "rarity": "UR",
+    "imageUrl": "/cards/18144506.jpg",
+    "artPalette": [
+      "#0d9488",
+      "#134e4a",
+      "#5eead4"
+    ],
+    "artMotif": "spell",
+    "effects": [
+      {
+        "id": "eff_ygo_duster",
+        "label": "Limpiar Mágicas/Trampas",
+        "description": "Destruye todas las Mágicas, Trampas y Péndulos rivales.",
+        "trigger": "IGNITION",
+        "spellSpeed": 1,
+        "targetRequirement": "NONE",
+        "operations": [
+          {
+            "type": "DESTROY_ALL_SPELLS_TRAPS"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ygo_axe_of_despair",
+    "ygoprodeckId": 40619825,
+    "name": "Hacha de Desesperación",
+    "category": "SPELL",
+    "subtype": "equip",
+    "level": 0,
+    "atk": 0,
+    "def": 0,
+    "isExtraDeck": false,
+    "description": "Mágica de Equipo. El monstruo equipado gana +1000 ATK.",
+    "rarity": "SR",
+    "imageUrl": "/cards/40619825.jpg",
+    "artPalette": [
+      "#0d9488",
+      "#134e4a",
+      "#5eead4"
+    ],
+    "artMotif": "spell",
+    "effects": [
+      {
+        "id": "eff_ygo_axe",
+        "label": "Equipar (+1000 ATK)",
+        "description": "El monstruo objetivo gana +1000 ATK.",
+        "trigger": "IGNITION",
+        "spellSpeed": 1,
+        "targetRequirement": "OWN_MONSTER",
+        "operations": [
+          {
+            "type": "MODIFY_STATS",
+            "atkDelta": 1000,
+            "defDelta": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ygo_mirror_force",
+    "ygoprodeckId": 44095762,
+    "name": "Fuerza de Espejo",
+    "category": "TRAP",
+    "subtype": "normal",
+    "level": 0,
+    "atk": 0,
+    "def": 0,
+    "isExtraDeck": false,
+    "description": "Cuando un monstruo del adversario declara un ataque: destruye todos los monstruos del adversario.",
+    "rarity": "UR",
+    "imageUrl": "/cards/44095762.jpg",
+    "artPalette": [
+      "#be185d",
+      "#500724",
+      "#f472b6"
+    ],
+    "artMotif": "trap",
+    "effects": [
+      {
+        "id": "eff_ygo_mirror",
+        "label": "Reflejar Ataque",
+        "description": "Niega el ataque y destruye los monstruos rivales.",
+        "trigger": "ON_ATTACK_DECLARE",
+        "spellSpeed": 2,
+        "targetRequirement": "NONE",
+        "operations": [
+          {
+            "type": "NEGATE_ATTACK"
+          },
+          {
+            "type": "DESTROY_ALL_OPPONENT_MONSTERS"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ygo_magic_cylinder",
+    "ygoprodeckId": 62279055,
+    "name": "Cilindro Mágico",
+    "category": "TRAP",
+    "subtype": "normal",
+    "level": 0,
+    "atk": 0,
+    "def": 0,
+    "isExtraDeck": false,
+    "description": "Cuando un monstruo del adversario declara un ataque: niega el ataque e inflige 1500 de daño.",
+    "rarity": "SR",
+    "imageUrl": "/cards/62279055.jpg",
+    "artPalette": [
+      "#be185d",
+      "#500724",
+      "#f472b6"
+    ],
+    "artMotif": "trap",
+    "effects": [
+      {
+        "id": "eff_ygo_cylinder",
+        "label": "Devolver Daño",
+        "description": "Niega el ataque e inflige 1500 de daño al adversario.",
+        "trigger": "ON_ATTACK_DECLARE",
+        "spellSpeed": 2,
+        "targetRequirement": "NONE",
+        "operations": [
+          {
+            "type": "NEGATE_ATTACK"
+          },
+          {
+            "type": "DAMAGE_OPPONENT",
+            "value": 1500
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ygo_solemn_judgment",
+    "ygoprodeckId": 41420027,
+    "name": "Juicio Solemne",
+    "category": "TRAP",
+    "subtype": "counter",
+    "level": 0,
+    "atk": 0,
+    "def": 0,
+    "isExtraDeck": false,
+    "description": "Trampa de Contraefecto. Paga 1000 LP para negar la activación de la carta anterior en la Cadena.",
+    "rarity": "UR",
+    "imageUrl": "/cards/41420027.jpg",
+    "artPalette": [
+      "#be185d",
+      "#500724",
+      "#f472b6"
+    ],
+    "artMotif": "trap",
+    "effects": [
+      {
+        "id": "eff_ygo_solemn",
+        "label": "Negar Activación (-1000 LP)",
+        "description": "Niega el eslabón anterior de la Cadena.",
+        "trigger": "COUNTER",
+        "spellSpeed": 3,
+        "targetRequirement": "PREVIOUS_CHAIN_LINK",
+        "condition": {
+          "minLP": 1001,
+          "lpCost": 1000
+        },
+        "operations": [
+          {
+            "type": "NEGATE_CHAIN_LINK"
+          }
+        ]
+      }
+    ]
+  }
+]

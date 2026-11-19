@@ -1,4 +1,7 @@
 import { CardDefinition } from '../types/tcg';
+import ygoprodeckCardsData from './ygoprodeckCards.json';
+
+const YGOPRODECK_CARDS = ygoprodeckCardsData as CardDefinition[];
 
 export const BOSS_IMAGES = {
   AZURE_DRAGON: '/src/assets/images/boss_azure_dragon_1795104772574.jpg',
@@ -1212,6 +1215,7 @@ export const CARD_CATALOG: CardDefinition[] = [
       },
     ],
   },
+  ...YGOPRODECK_CARDS,
 ];
 
 export const CARD_BY_ID: Record<string, CardDefinition> = Object.fromEntries(

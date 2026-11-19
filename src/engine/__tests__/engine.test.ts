@@ -252,7 +252,7 @@ test('IA táctica y persistencia SaveManager: ejecuta jugadas válidas y guarda 
     removeItem: (k) => { delete mem[k]; },
   };
   let profile = SaveManager.load(mockStorage);
-  assert.equal(profile.decks.length, 2);
+  assert.equal(profile.decks.length, 3);
 
   profile = SaveManager.recordDuelResult(
     profile,

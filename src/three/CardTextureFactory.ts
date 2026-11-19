@@ -266,19 +266,20 @@ export class CardTextureFactory {
 
     paint();
 
-    if (card.bossImage) {
-      const cachedImg = this.imageCache.get(card.bossImage);
+    const artSrc = card.imageUrl ?? card.bossImage;
+    if (artSrc) {
+      const cachedImg = this.imageCache.get(artSrc);
       if (cachedImg && cachedImg.complete) {
         paint(cachedImg);
       } else {
         const img = new Image();
         img.crossOrigin = 'anonymous';
         img.onload = () => {
-          this.imageCache.set(card.bossImage!, img);
+          this.imageCache.set(artSrc, img);
           paint(img);
           onAsyncLoad?.();
         };
-        img.src = card.bossImage;
+        img.src = artSrc;
       }
     }
 
