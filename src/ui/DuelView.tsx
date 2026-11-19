@@ -77,8 +77,10 @@ export const DuelView: React.FC<DuelViewProps> = ({
   const [localPrompt, setLocalPrompt] = useState<LocalPrompt | null>(null);
 
   const [phaseBanner, setPhaseBanner] = useState<{ title: string; sub: string; isBattle: boolean } | null>(null);
+  const [bossCutIn, setBossCutIn] = useState<{ cardId: string; method?: string } | null>(null);
   const [damagePopups, setDamagePopups] = useState<DamagePopup[]>([]);
   const seenDamageCueIdsRef = useRef<Set<string>>(new Set());
+  const seenBossCueIdsRef = useRef<Set<string>>(new Set());
   const prevBannerKeyRef = useRef<string>('');
 
   const isPlayerTurn = duel.activePlayer === 'player' && !duel.winner;
@@ -100,6 +102,17 @@ export const DuelView: React.FC<DuelViewProps> = ({
     const t = window.setTimeout(() => setPhaseBanner(null), 1350);
     return () => window.clearTimeout(t);
   }, [duel.duelId, duel.turnNumber, duel.activePlayer, duel.phase, duel.opponent.name]);
+
+  useEffect(() => {
+    const freshBoss = duel.recentCues.find(
+      (c) => c.kind === 'BOSS_SUMMON' && c.cardId && !seenBossCueIdsRef.current.has(c.id)
+    );
+    if (!freshBoss || !freshBoss.cardId) return;
+    seenBossCueIdsRef.current.add(freshBoss.id);
+    setBossCutIn({ cardId: freshBoss.cardId, method: freshBoss.summonMethod });
+    const t = window.setTimeout(() => setBossCutIn(null), 1550);
+    return () => window.clearTimeout(t);
+  }, [duel.recentCues]);
 
   useEffect(() => {
     const fresh: DamagePopup[] = [];
@@ -357,6 +370,29 @@ export const DuelView: React.FC<DuelViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* Boss Monster Summon Cut-In */}
+      {bossCutIn && (() => {
+        const bDef = CardManager.getDef(bossCutIn.cardId);
+        return (
+          <div className="fixed inset-0 z-30 flex items-center justify-center pointer-events-none">
+            <div className="animate-cutin duel-plate flex items-center gap-5 rounded-xl px-7 py-4 shadow-2xl">
+              <CardArtRenderer card={bDef} size="md" showRarity />
+              <div className="space-y-1.5 max-w-xs">
+                <div className="text-[10px] font-mono-num tracking-[0.25em] uppercase text-[#e5c068]">
+                  {bossCutIn.method ? `INVOCACIÓN ${bossCutIn.method}` : 'INVOCACIÓN DE MONSTRUO JEFE'}
+                </div>
+                <div className="font-display text-2xl font-extrabold text-[#f8f3e6] leading-tight">
+                  {bDef.name}
+                </div>
+                <div className="font-mono-num text-sm font-bold text-[#e5c068]">
+                  ATK {bDef.atk} {bDef.subtype === 'link' ? `· LINK-${bDef.level}` : `· DEF ${bDef.def}`}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Projected 3D Monster Stat Badges */}
       <div className="fixed inset-0 pointer-events-none z-10 overflow-hidden">
