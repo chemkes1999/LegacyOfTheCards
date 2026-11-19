@@ -50,6 +50,18 @@ export class EffectManager {
       }
     }
 
+    if (effect.trigger === 'ON_SUMMON') {
+      if (state.activePlayer !== controller) {
+        return { allowed: false, reason: 'Solo en tu turno.' };
+      }
+      if (state.phase !== 'MAIN1' && state.phase !== 'MAIN2') {
+        return { allowed: false, reason: 'Solo en Main Phase.' };
+      }
+      if (!card.summonedThisTurn) {
+        return { allowed: false, reason: 'Solo se activa el turno en que es Invocado.' };
+      }
+    }
+
     if (def.category === 'TRAP' && card.location === 'SPELL_TRAP' && card.turnPlaced >= state.turnNumber) {
       return { allowed: false, reason: 'Las Trampas colocadas este turno no pueden activarse aún.' };
     }
@@ -95,6 +107,20 @@ export class EffectManager {
       const hasGyMonster = ps.graveyard.some((c) => CardManager.getDef(c.cardId).category === 'MONSTER');
       if (!hasGyMonster || SummonManager.getFirstEmptyMonsterSlot(state, controller) === -1) {
         return { allowed: false, reason: 'Sin monstruos en el Cementerio o campo lleno.' };
+      }
+    } else if (effect.targetRequirement === 'OWN_HAND_MONSTER') {
+      if (SummonManager.getFirstEmptyMonsterSlot(state, controller) === -1) {
+        return { allowed: false, reason: 'No tienes Zonas de Monstruo libres.' };
+      }
+      const validHand = this.getValidTargetUids(state, controller, effect).filter((uid) => uid !== card.uid);
+      if (validHand.length === 0) {
+        const ssOp = effect.operations.find((o) => o.type === 'SPECIAL_SUMMON_FROM_HAND');
+        const lvHint = ssOp?.filterExactLevel
+          ? ` de Nivel ${ssOp.filterExactLevel}`
+          : ssOp?.filterMaxLevel
+          ? ` de Nivel ${ssOp.filterMaxLevel} o menor`
+          : '';
+        return { allowed: false, reason: `No tienes monstruos${lvHint} en tu mano.` };
       }
     }
 
@@ -159,6 +185,19 @@ export class EffectManager {
         return ps.graveyard
           .filter((c) => CardManager.getDef(c.cardId).category === 'MONSTER')
           .map((c) => c.uid);
+      case 'OWN_HAND_MONSTER': {
+        const ssOp = effect.operations.find((o) => o.type === 'SPECIAL_SUMMON_FROM_HAND');
+        return ps.hand
+          .filter((c) => {
+            const d = CardManager.getDef(c.cardId);
+            if (d.category !== 'MONSTER' || d.isExtraDeck || d.subtype === 'ritual') return false;
+            if (ssOp?.filterExactLevel !== undefined && d.level !== ssOp.filterExactLevel) return false;
+            if (ssOp?.filterMaxLevel !== undefined && d.level > ssOp.filterMaxLevel) return false;
+            if (ssOp?.filterAttribute && d.attribute !== ssOp.filterAttribute) return false;
+            return true;
+          })
+          .map((c) => c.uid);
+      }
       case 'PREVIOUS_CHAIN_LINK':
         return state.chainStack.length > 0
           ? [state.chainStack[state.chainStack.length - 1].sourceUid]
@@ -351,6 +390,40 @@ export class EffectManager {
               summonMethod: 'SPECIAL',
               timestamp: Date.now(),
             });
+          }
+          break;
+        }
+        case 'SPECIAL_SUMMON_FROM_HAND': {
+          if (SummonManager.getFirstEmptyMonsterSlot(state, controller) !== -1) {
+            const target =
+              (link.targetUid ? ps.hand.find((c) => c.uid === link.targetUid) : null) ??
+              ps.hand.find((c) => {
+                const d = CardManager.getDef(c.cardId);
+                if (d.category !== 'MONSTER' || d.isExtraDeck || d.subtype === 'ritual') return false;
+                if (op.filterExactLevel !== undefined && d.level !== op.filterExactLevel) return false;
+                if (op.filterMaxLevel !== undefined && d.level > op.filterMaxLevel) return false;
+                if (op.filterAttribute && d.attribute !== op.filterAttribute) return false;
+                return true;
+              });
+            if (target) {
+              ps.hand = ps.hand.filter((c) => c.uid !== target.uid);
+              SummonManager.placeMonsterOnField(state, controller, target, 'ATK', true, false);
+              const tDef = CardManager.getDef(target.cardId);
+              TurnManager.addLog(
+                state,
+                controller,
+                `${tDef.name} es Invocado Especialmente desde la mano por ${def.name}.`,
+                'summon'
+              );
+              state.recentCues.push({
+                id: `cue_sshand_${Date.now()}`,
+                kind: tDef.level >= 7 ? 'BOSS_SUMMON' : 'SUMMON',
+                cardId: tDef.id,
+                sourceZone: { owner: controller, zone: target.location, index: target.zoneIndex },
+                summonMethod: 'SPECIAL',
+                timestamp: Date.now(),
+              });
+            }
           }
           break;
         }

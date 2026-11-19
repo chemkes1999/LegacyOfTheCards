@@ -220,3 +220,55 @@ test('parseYdk y exportYdk: importa y exporta mazos en formato estándar .ydk', 
   assert.ok(exported.content.includes('89631139'));
   assert.ok(exported.content.includes('23995346'));
 });
+
+test('Trident Warrior: detecta ON_SUMMON + SPECIAL_SUMMON_FROM_HAND e Invoca Nivel 3 desde la mano', async () => {
+  const { CardManager } = await import('../../engine/CardManager');
+  const { DuelManager } = await import('../../engine/DuelManager');
+  const { EffectManager } = await import('../../engine/EffectManager');
+
+  // Register Trident Warrior with empty effects (simulating older IndexedDB cache)
+  const trident = mapYgoCardToDefinition({
+    id: 42810973,
+    name: 'Trident Warrior',
+    type: 'Effect Monster',
+    frameType: 'effect',
+    desc: 'When this card is Normal Summoned: You can Special Summon 1 Level 3 monster from your hand.',
+    atk: 1800,
+    def: 1200,
+    level: 4,
+    race: 'Warrior',
+    attribute: 'LIGHT',
+  });
+  CardManager.registerBulkCatalog([trident]);
+
+  const enriched = CardManager.getDef(trident.id);
+  assert.equal(enriched.effects.length, 1);
+  assert.equal(enriched.effects[0].trigger, 'ON_SUMMON');
+  assert.equal(enriched.effects[0].targetRequirement, 'OWN_HAND_MONSTER');
+  assert.equal(enriched.effects[0].operations[0].type, 'SPECIAL_SUMMON_FROM_HAND');
+  assert.equal(enriched.effects[0].operations[0].filterExactLevel, 3);
+
+  // Build deterministic duel with Trident Warrior (Lv4) + ygo_junk_synchron (Lv3) in hand
+  const pad = Array.from({ length: 35 }, () => 'm_ebony_knight');
+  let state = DuelManager.createDuel({
+    mode: 'VS_AI',
+    playerDeckIds: [trident.id, 'ygo_junk_synchron', 'm_ebony_knight', 'm_valiant_blade', 'm_dawn_mage', ...pad],
+    playerExtraIds: [],
+    opponentDeckIds: ['m_ebony_knight', 'm_ebony_knight', 'm_ebony_knight', 'm_ebony_knight', 'm_ebony_knight', ...pad],
+    opponentExtraIds: [],
+    shuffle: false,
+  });
+
+  const tridentHand = state.player.hand.find((c) => c.cardId === trident.id)!;
+  const lv3Hand = state.player.hand.find((c) => c.cardId === 'ygo_junk_synchron')!;
+  state = DuelManager.normalSummonOrSet(state, 'player', tridentHand.uid, [], 'ATK', false).state;
+
+  const liveTrident = CardManager.findInstance(state, tridentHand.uid)!;
+  const can = EffectManager.canActivateEffect(state, 'player', liveTrident, enriched.effects[0]);
+  assert.equal(can.allowed, true, `Should be allowed to activate Trident Warrior: ${can.reason}`);
+
+  state = DuelManager.activateCard(state, 'player', liveTrident.uid, 0, lv3Hand.uid).state;
+  const summonedLv3 = CardManager.findInstance(state, lv3Hand.uid)!;
+  assert.equal(summonedLv3.location, 'MONSTER');
+  CardManager.registerBulkCatalog([]);
+});

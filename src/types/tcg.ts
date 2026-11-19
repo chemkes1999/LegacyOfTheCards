@@ -93,6 +93,7 @@ export type TargetRequirement =
   | 'OWN_MONSTER'
   | 'ANY_MONSTER'
   | 'OWN_GY_MONSTER'
+  | 'OWN_HAND_MONSTER'
   | 'PREVIOUS_CHAIN_LINK';
 
 export interface EffectOperation {
@@ -103,6 +104,7 @@ export interface EffectOperation {
   filterCategory?: CardCategory;
   filterAttribute?: Attribute;
   filterMaxLevel?: number;
+  filterExactLevel?: number;
   restriction?: 'CANNOT_ATTACK' | 'CANNOT_CHANGE_POS' | 'IMMUNE_DESTROY';
   duration?: 'TURN' | 'PERMANENT';
 }

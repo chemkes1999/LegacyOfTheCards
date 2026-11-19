@@ -706,20 +706,38 @@ export const DuelView: React.FC<DuelViewProps> = ({
                     </button>
                   )}
 
-                  {isMainPhase &&
-                    selectedDef.effects.map((eff, idx) =>
-                      eff.trigger === 'IGNITION' ? (
+                  {selectedDef.effects.map((eff, idx) => {
+                    if (
+                      eff.trigger !== 'IGNITION' &&
+                      eff.trigger !== 'ON_SUMMON' &&
+                      eff.trigger !== 'QUICK'
+                    ) {
+                      return null;
+                    }
+                    const check = EffectManager.canActivateEffect(duel, 'player', selectedInstance, eff);
+                    return (
+                      <div key={eff.id} className="space-y-0.5">
                         <button
-                          key={eff.id}
                           type="button"
+                          disabled={!check.allowed}
                           onClick={() => handleActivateCard(selectedInstance, idx)}
-                          className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 py-2 text-xs font-bold text-slate-950 cursor-pointer"
+                          className={`w-full flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold transition-colors ${
+                            check.allowed
+                              ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 cursor-pointer'
+                              : 'bg-slate-900 border border-slate-800 text-slate-500 cursor-not-allowed'
+                          }`}
                         >
                           <Sparkles className="h-3.5 w-3.5" />
                           <span>{eff.label}</span>
                         </button>
-                      ) : null
-                    )}
+                        {!check.allowed && check.reason && (
+                          <div className="text-[10px] text-slate-400 text-center">
+                            {check.reason}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </>
               )}
 

@@ -1,4 +1,5 @@
 import { CARD_BY_ID, CARD_CATALOG } from '../data/cards';
+import { inferCardEffectsFromDescription } from '../services/ygoprodeckEffectParser';
 import {
   Attribute,
   CardCategory,
@@ -50,6 +51,16 @@ export const ATTRIBUTE_LABELS_ES: Record<Attribute, string> = {
   DIVINE: 'DIVINO',
 };
 
+function enrichCardEffects(cards: CardDefinition[]): CardDefinition[] {
+  return cards.map((card) => {
+    if (card.effects.length > 0 || (card.category === 'MONSTER' && card.subtype === 'normal')) {
+      return card;
+    }
+    const inferred = inferCardEffectsFromDescription(card);
+    return inferred.length > 0 ? { ...card, effects: inferred } : card;
+  });
+}
+
 export class CardManager {
   private static customCards: CardDefinition[] = [];
   private static customCardMap: Record<string, CardDefinition> = {};
@@ -58,14 +69,16 @@ export class CardManager {
   private static cachedAll: CardDefinition[] | null = null;
 
   static registerCustomCards(cards: CardDefinition[]): void {
-    this.customCards = [...cards];
-    this.customCardMap = Object.fromEntries(cards.map((c) => [c.id, c]));
+    const enriched = enrichCardEffects(cards);
+    this.customCards = enriched;
+    this.customCardMap = Object.fromEntries(enriched.map((c) => [c.id, c]));
     this.cachedAll = null;
   }
 
   static registerBulkCatalog(cards: CardDefinition[]): void {
-    this.bulkCards = cards;
-    this.bulkCardMap = Object.fromEntries(cards.map((c) => [c.id, c]));
+    const enriched = enrichCardEffects(cards);
+    this.bulkCards = enriched;
+    this.bulkCardMap = Object.fromEntries(enriched.map((c) => [c.id, c]));
     this.cachedAll = null;
   }
 
