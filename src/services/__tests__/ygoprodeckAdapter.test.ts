@@ -103,3 +103,56 @@ test('Integridad Fase 2: set curado de YGOPRODeck y mazo Leyendas Clásicas son 
   assert.equal(res.mainCount, 40);
   assert.equal(res.extraCount, 5);
 });
+
+test('inferCardEffectsFromDescription y registro dinámico de cartas importadas', async () => {
+  const { inferCardEffectsFromDescription } = await import('../ygoprodeckEffectParser');
+  const { CardManager } = await import('../../engine/CardManager');
+  const { SaveManager } = await import('../../engine/SaveManager');
+
+  const potEffects = inferCardEffectsFromDescription({
+    id: 'ygo_custom_pot',
+    category: 'SPELL',
+    subtype: 'normal',
+    description: 'Draw 2 cards.',
+  });
+  assert.equal(potEffects.length, 1);
+  assert.equal(potEffects[0].operations[0].type, 'DRAW');
+  assert.equal(potEffects[0].operations[0].value, 2);
+
+  const trapEffects = inferCardEffectsFromDescription({
+    id: 'ygo_custom_trap',
+    category: 'TRAP',
+    subtype: 'normal',
+    description: "When an opponent's monster declares an attack: Negate the attack and inflict 800 damage.",
+  });
+  assert.equal(trapEffects.length, 1);
+  assert.equal(trapEffects[0].trigger, 'ON_ATTACK_DECLARE');
+  assert.equal(trapEffects[0].operations[0].type, 'NEGATE_ATTACK');
+  assert.equal(trapEffects[0].operations[1].type, 'DAMAGE_OPPONENT');
+
+  // Dynamic import round-trip
+  const mem: Record<string, string> = {};
+  const mockStorage = {
+    getItem: (k: string) => mem[k] ?? null,
+    setItem: (k: string, v: string) => { mem[k] = v; },
+    removeItem: (k: string) => { delete mem[k]; },
+  };
+  let profile = SaveManager.load(mockStorage);
+  const imported = mapYgoCardToDefinition({
+    id: 70095154,
+    name: 'Cyber Dragon',
+    type: 'Effect Monster',
+    frameType: 'effect',
+    desc: 'If only your opponent controls a monster, you can Special Summon this card.',
+    atk: 2100,
+    def: 1600,
+    level: 5,
+    race: 'Machine',
+    attribute: 'LIGHT',
+  });
+  profile = SaveManager.importCustomCard(profile, imported, mockStorage);
+  CardManager.registerCustomCards(profile.customImportedCards ?? []);
+  assert.equal(CardManager.getDef(imported.id).name, 'Cyber Dragon');
+  assert.equal(SaveManager.load(mockStorage).customImportedCards?.length, 1);
+  CardManager.registerCustomCards([]);
+});

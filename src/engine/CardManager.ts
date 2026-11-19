@@ -51,12 +51,23 @@ export const ATTRIBUTE_LABELS_ES: Record<Attribute, string> = {
 };
 
 export class CardManager {
+  private static customCards: CardDefinition[] = [];
+  private static customCardMap: Record<string, CardDefinition> = {};
+
+  static registerCustomCards(cards: CardDefinition[]): void {
+    this.customCards = [...cards];
+    this.customCardMap = Object.fromEntries(cards.map((c) => [c.id, c]));
+  }
+
   static getAll(): CardDefinition[] {
-    return CARD_CATALOG;
+    if (this.customCards.length === 0) return CARD_CATALOG;
+    const seen = new Set(CARD_CATALOG.map((c) => c.id));
+    const extras = this.customCards.filter((c) => !seen.has(c.id));
+    return [...CARD_CATALOG, ...extras];
   }
 
   static getDef(cardId: string): CardDefinition {
-    const def = CARD_BY_ID[cardId];
+    const def = this.customCardMap[cardId] ?? CARD_BY_ID[cardId];
     if (!def) {
       throw new Error(`Carta desconocida en el registro: ${cardId}`);
     }

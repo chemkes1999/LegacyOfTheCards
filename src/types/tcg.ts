@@ -366,6 +366,7 @@ export interface PlayerProfileSave {
   activeDeckId: string;
   decks: SavedDeck[];
   unlockedCardIds: Record<string, number>; // cardId -> owned copies (up to 3)
+  customImportedCards?: CardDefinition[]; // User-imported YGOPRODeck cards
   completedStageIds: string[];
   duelPoints: number;
   history: DuelHistoryRecord[];

@@ -27,6 +27,35 @@ export default defineConfig(() => {
           }
         },
       },
+      {
+        name: 'ygoprodeck-image-proxy',
+        configureServer(server) {
+          server.middlewares.use('/api/ygo-img', async (req, res, next) => {
+            try {
+              const reqUrl = new URL(req.url ?? '', 'http://localhost');
+              const target = reqUrl.searchParams.get('url');
+              if (!target || !target.startsWith('https://images.ygoprodeck.com/')) {
+                res.statusCode = 400;
+                res.end('Invalid image URL');
+                return;
+              }
+              const upstream = await fetch(target);
+              if (!upstream.ok) {
+                res.statusCode = upstream.status;
+                res.end('Upstream error');
+                return;
+              }
+              const contentType = upstream.headers.get('content-type') || 'image/jpeg';
+              const buf = Buffer.from(await upstream.arrayBuffer());
+              res.setHeader('Content-Type', contentType);
+              res.setHeader('Cache-Control', 'public, max-age=86400');
+              res.end(buf);
+            } catch {
+              next();
+            }
+          });
+        },
+      },
     ],
     resolve: {
       alias: {

@@ -266,7 +266,11 @@ export class CardTextureFactory {
 
     paint();
 
-    const artSrc = card.imageUrl ?? card.bossImage;
+    const rawArtSrc = card.imageUrl ?? card.bossImage;
+    const artSrc =
+      rawArtSrc && rawArtSrc.startsWith('https://images.ygoprodeck.com/')
+        ? `/api/ygo-img?url=${encodeURIComponent(rawArtSrc)}`
+        : rawArtSrc;
     if (artSrc) {
       const cachedImg = this.imageCache.get(artSrc);
       if (cachedImg && cachedImg.complete) {

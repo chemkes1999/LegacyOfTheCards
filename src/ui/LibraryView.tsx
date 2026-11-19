@@ -1,26 +1,52 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, BookOpen, ChevronLeft, ChevronRight, Globe, Loader2, Search } from 'lucide-react';
-import { CARD_CATALOG } from '../data/cards';
-import { ATTRIBUTE_LABELS_ES, SUBTYPE_LABELS_ES } from '../engine/CardManager';
+import {
+  ArrowLeft,
+  BookOpen,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Globe,
+  Loader2,
+  Search,
+  Sparkles,
+  Trash2,
+} from 'lucide-react';
+import { CARD_BY_ID } from '../data/cards';
+import { ATTRIBUTE_LABELS_ES, CardManager, SUBTYPE_LABELS_ES } from '../engine/CardManager';
 import { searchOfficialCards, YgoApiLanguage } from '../services/ygoprodeckApi';
+import { inferCardEffectsFromDescription } from '../services/ygoprodeckEffectParser';
 import { Attribute, CardCategory, CardDefinition, PlayerProfileSave } from '../types/tcg';
 import { CardArtRenderer } from './CardArtRenderer';
 
 interface LibraryViewProps {
   profile: PlayerProfileSave;
+  onImportCard: (card: CardDefinition) => void;
+  onRemoveImportedCard: (cardId: string) => void;
   onClose: () => void;
 }
 
 const PAGE_SIZE = 24;
 
-export const LibraryView: React.FC<LibraryViewProps> = ({ profile, onClose }) => {
+export const LibraryView: React.FC<LibraryViewProps> = ({
+  profile,
+  onImportCard,
+  onRemoveImportedCard,
+  onClose,
+}) => {
   const [tab, setTab] = useState<'PLAYABLE' | 'YGOPRODECK'>('PLAYABLE');
+
+  const allPlayable = useMemo(
+    () => CardManager.getAll(),
+    [profile.customImportedCards]
+  );
 
   // Local playable catalog filters
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<'ALL' | CardCategory>('ALL');
   const [attribute, setAttribute] = useState<'ALL' | Attribute>('ALL');
-  const [selectedCard, setSelectedCard] = useState<CardDefinition>(CARD_CATALOG[0]);
+  const [selectedCard, setSelectedCard] = useState<CardDefinition>(allPlayable[0]);
+  const [importNotice, setImportNotice] = useState<string | null>(null);
 
   // Live YGOPRODeck search state
   const [ygoQuery, setYgoQuery] = useState('Blue-Eyes');
@@ -36,15 +62,20 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ profile, onClose }) =>
 
   const playableYgoIds = useMemo(() => {
     const set = new Set<number>();
-    for (const c of CARD_CATALOG) {
+    for (const c of allPlayable) {
       if (c.ygoprodeckId) set.add(c.ygoprodeckId);
     }
     return set;
-  }, []);
+  }, [allPlayable]);
+
+  const customImportedIds = useMemo(
+    () => new Set((profile.customImportedCards ?? []).map((c) => c.id)),
+    [profile.customImportedCards]
+  );
 
   const filteredLocal = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return CARD_CATALOG.filter((c) => {
+    return allPlayable.filter((c) => {
       if (category !== 'ALL' && c.category !== category) return false;
       if (attribute !== 'ALL' && c.attribute !== attribute) return false;
       if (q && !c.name.toLowerCase().includes(q) && !c.description.toLowerCase().includes(q)) {
@@ -52,7 +83,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ profile, onClose }) =>
       }
       return true;
     });
-  }, [query, category, attribute]);
+  }, [allPlayable, query, category, attribute]);
 
   // Debounced live fetch from YGOPRODeck when on YGOPRODECK tab
   useEffect(() => {
@@ -95,7 +126,33 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ profile, onClose }) =>
     };
   }, [tab, ygoQuery, ygoType, ygoAttr, ygoLang, ygoOffset]);
 
+  const handleImportForDuels = (card: CardDefinition) => {
+    const inferredEffects =
+      card.effects.length > 0 ? card.effects : inferCardEffectsFromDescription(card);
+    const enriched: CardDefinition = {
+      ...card,
+      effects: inferredEffects,
+    };
+    onImportCard(enriched);
+    setSelectedCard(enriched);
+    const detail =
+      enriched.category === 'MONSTER' && enriched.subtype === 'normal'
+        ? 'Monstruo Normal (100% jugable)'
+        : inferredEffects.length > 0
+        ? `con ${inferredEffects[0].operations.length} operación(es) de efecto auto-detectadas`
+        : 'jugable por estadísticas base (efecto complejo no mapeado)';
+    const msg = `"${enriched.name}" importada para Duelos y Mazos — ${detail}.`;
+    setImportNotice(msg);
+    window.setTimeout(() => setImportNotice((p) => (p === msg ? null : p)), 3800);
+  };
+
   const activeList = tab === 'PLAYABLE' ? filteredLocal : ygoCards;
+  const selectedIsBuiltIn = Boolean(CARD_BY_ID[selectedCard.id]);
+  const selectedIsImported = customImportedIds.has(selectedCard.id);
+  const selectedAlreadyPlayable =
+    selectedIsBuiltIn ||
+    selectedIsImported ||
+    (selectedCard.ygoprodeckId !== undefined && playableYgoIds.has(selectedCard.ygoprodeckId));
 
   return (
     <div className="fixed inset-0 z-40 flex flex-col bg-[#070a12]/95 p-4 sm:p-6 overflow-hidden">
@@ -109,8 +166,8 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ profile, onClose }) =>
             <h2 className="font-display text-2xl font-extrabold text-white">Biblioteca de Cartas</h2>
             <p className="text-xs text-slate-400">
               {tab === 'PLAYABLE'
-                ? `${filteredLocal.length} de ${CARD_CATALOG.length} cartas jugables (incluye set oficial YGOPRODeck)`
-                : `${ygoTotal.toLocaleString()} resultados oficiales en YGOPRODeck API v7`}
+                ? `${filteredLocal.length} de ${allPlayable.length} cartas jugables (${profile.customImportedCards?.length ?? 0} importadas por ti)`
+                : `${ygoTotal.toLocaleString()} resultados oficiales en YGOPRODeck API v7 — importa cualquiera para duelos`}
             </p>
           </div>
         </div>
@@ -127,7 +184,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ profile, onClose }) =>
                   : 'text-slate-300 hover:text-white'
               }`}
             >
-              Catálogo Jugable ({CARD_CATALOG.length})
+              Catálogo Jugable ({allPlayable.length})
             </button>
             <button
               type="button"
@@ -139,7 +196,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ profile, onClose }) =>
               }`}
             >
               <Globe className="h-3.5 w-3.5" />
-              <span>YGOPRODeck (En vivo)</span>
+              <span>YGOPRODeck (Todas)</span>
             </button>
           </div>
 
@@ -153,6 +210,12 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ profile, onClose }) =>
           </button>
         </div>
       </div>
+
+      {importNotice && (
+        <div className="mx-auto mt-2 w-full max-w-7xl rounded-lg border border-emerald-500/50 bg-emerald-950/70 px-3 py-2 text-xs text-emerald-200 shrink-0">
+          {importNotice}
+        </div>
+      )}
 
       {/* Filters */}
       {tab === 'PLAYABLE' ? (
@@ -215,7 +278,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ profile, onClose }) =>
                 setYgoOffset(0);
                 setYgoQuery(e.target.value);
               }}
-              placeholder="Buscar carta oficial (ej. Blue-Eyes, Dark Magician, Kuriboh)..."
+              placeholder="Buscar cualquiera de las 13,000+ cartas (ej. Exodia, Cyber Dragon, Ash Blossom)..."
               className="w-full rounded-lg border border-slate-700 bg-slate-900 pl-9 pr-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-emerald-400 focus:outline-none"
             />
           </div>
@@ -305,7 +368,11 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ profile, onClose }) =>
                       {tab === 'PLAYABLE' ? (
                         <span className="text-[11px] font-mono-num text-slate-400">
                           x{profile.unlockedCardIds[card.id] ?? 3}
-                          {card.ygoprodeckId ? ' · Oficial' : ''}
+                          {customImportedIds.has(card.id)
+                            ? ' · Importada'
+                            : card.ygoprodeckId
+                            ? ' · Oficial'
+                            : ''}
                         </span>
                       ) : (
                         <span
@@ -409,6 +476,38 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ profile, onClose }) =>
                   {selectedCard.subtype === 'link' ? '—' : selectedCard.def}
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* On-demand Import / Remove CTA */}
+          {!selectedAlreadyPlayable ? (
+            <button
+              type="button"
+              onClick={() => handleImportForDuels(selectedCard)}
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 py-2.5 text-xs font-bold text-slate-950 transition-colors cursor-pointer"
+            >
+              <Download className="h-4 w-4" />
+              <span>Importar para Duelos y Mazos (x3)</span>
+            </button>
+          ) : selectedIsImported ? (
+            <div className="flex items-center gap-2">
+              <div className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-950/40 py-2 text-xs font-semibold text-emerald-300">
+                <CheckCircle2 className="h-4 w-4" />
+                <span>Importada en tu colección</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => onRemoveImportedCard(selectedCard.id)}
+                aria-label="Quitar carta importada"
+                className="rounded-lg bg-rose-950 hover:bg-rose-900 border border-rose-700/60 p-2 text-rose-200 cursor-pointer"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-950/30 py-2 text-xs font-semibold text-amber-300">
+              <Sparkles className="h-4 w-4" />
+              <span>Ya incluida en el catálogo jugable</span>
             </div>
           )}
 

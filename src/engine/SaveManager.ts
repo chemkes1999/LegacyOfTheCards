@@ -1,6 +1,12 @@
 import { CARD_CATALOG } from '../data/cards';
 import { DEFAULT_SAVED_DECKS } from '../data/decks';
-import { DuelHistoryRecord, GameSettings, PlayerProfileSave, SavedDeck } from '../types/tcg';
+import {
+  CardDefinition,
+  DuelHistoryRecord,
+  GameSettings,
+  PlayerProfileSave,
+  SavedDeck,
+} from '../types/tcg';
 
 const STORAGE_KEY = 'duel_arena_legacy_save_v1';
 
@@ -32,6 +38,7 @@ export function createDefaultSave(): PlayerProfileSave {
     activeDeckId: DEFAULT_SAVED_DECKS[0].id,
     decks: DEFAULT_SAVED_DECKS.map((d) => ({ ...d })),
     unlockedCardIds: createInitialCollection(),
+    customImportedCards: [],
     completedStageIds: [],
     duelPoints: 500,
     history: [],
@@ -69,10 +76,14 @@ export class SaveManager {
       }
       const parsed = JSON.parse(raw) as Partial<PlayerProfileSave>;
       const fallback = createDefaultSave();
+      const customImportedCards = Array.isArray(parsed.customImportedCards)
+        ? parsed.customImportedCards
+        : [];
       return {
         activeDeckId: parsed.activeDeckId || fallback.activeDeckId,
         decks: Array.isArray(parsed.decks) && parsed.decks.length > 0 ? parsed.decks : fallback.decks,
-        unlockedCardIds: parsed.unlockedCardIds || fallback.unlockedCardIds,
+        unlockedCardIds: { ...fallback.unlockedCardIds, ...(parsed.unlockedCardIds || {}) },
+        customImportedCards,
         completedStageIds: Array.isArray(parsed.completedStageIds) ? parsed.completedStageIds : [],
         duelPoints: typeof parsed.duelPoints === 'number' ? parsed.duelPoints : fallback.duelPoints,
         history: Array.isArray(parsed.history) ? parsed.history : [],
@@ -90,6 +101,39 @@ export class SaveManager {
     } catch {
       // Ignore quota errors gracefully
     }
+  }
+
+  static importCustomCard(
+    profile: PlayerProfileSave,
+    card: CardDefinition,
+    customStorage?: StorageLike
+  ): PlayerProfileSave {
+    const existing = profile.customImportedCards ?? [];
+    const filtered = existing.filter((c) => c.id !== card.id);
+    const next: PlayerProfileSave = {
+      ...profile,
+      customImportedCards: [...filtered, card],
+      unlockedCardIds: {
+        ...profile.unlockedCardIds,
+        [card.id]: 3,
+      },
+    };
+    this.save(next, customStorage);
+    return next;
+  }
+
+  static removeCustomCard(
+    profile: PlayerProfileSave,
+    cardId: string,
+    customStorage?: StorageLike
+  ): PlayerProfileSave {
+    const existing = profile.customImportedCards ?? [];
+    const next: PlayerProfileSave = {
+      ...profile,
+      customImportedCards: existing.filter((c) => c.id !== cardId),
+    };
+    this.save(next, customStorage);
+    return next;
   }
 
   static upsertDeck(profile: PlayerProfileSave, deck: SavedDeck, customStorage?: StorageLike): PlayerProfileSave {

@@ -55,16 +55,21 @@ export const DeckBuilderView: React.FC<DeckBuilderViewProps> = ({
   const validation = useMemo(() => DeckManager.validateDeck(editingDeck), [editingDeck]);
   const stats = useMemo(() => DeckManager.computeStats(editingDeck), [editingDeck]);
 
+  const allCards = useMemo(
+    () => CardManager.getAll(),
+    [profile.customImportedCards]
+  );
+
   const filteredCatalog = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return CARD_CATALOG.filter((c) => {
+    return allCards.filter((c) => {
       if (category !== 'ALL' && c.category !== category) return false;
       if (q && !c.name.toLowerCase().includes(q) && !c.description.toLowerCase().includes(q)) {
         return false;
       }
       return true;
     });
-  }, [query, category]);
+  }, [allCards, query, category]);
 
   const groupedMain = useMemo(() => {
     const counts = new Map<string, number>();

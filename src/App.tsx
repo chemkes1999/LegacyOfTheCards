@@ -6,12 +6,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AudioManager } from './audio/AudioManager';
 import { AIController } from './engine/AIController';
+import { CardManager } from './engine/CardManager';
 import { DuelManager } from './engine/DuelManager';
 import { GameManager } from './engine/GameManager';
 import { SaveManager } from './engine/SaveManager';
 import { DuelArena3D, ProjectedBadge, ZoneClickPayload } from './three/DuelArena3D';
 import {
   AIDifficulty,
+  CardDefinition,
   DuelState,
   GameSettings,
   PlayerProfileSave,
@@ -28,7 +30,11 @@ import { MainMenu } from './ui/MainMenu';
 import { PauseModal, ResultModal, SettingsView } from './ui/ResultModal';
 
 export default function App() {
-  const [profile, setProfile] = useState<PlayerProfileSave>(() => SaveManager.load());
+  const [profile, setProfile] = useState<PlayerProfileSave>(() => {
+    const loaded = SaveManager.load();
+    CardManager.registerCustomCards(loaded.customImportedCards ?? []);
+    return loaded;
+  });
   const [screen, setScreen] = useState<ScreenView>('TITLE');
   const [selectedDifficulty, setSelectedDifficulty] = useState<AIDifficulty>('NORMAL');
 
@@ -241,7 +247,24 @@ export default function App() {
 
   const handleResetSave = useCallback(() => {
     const fresh = SaveManager.resetSave();
+    CardManager.registerCustomCards(fresh.customImportedCards ?? []);
     setProfile(fresh);
+  }, []);
+
+  const handleImportCard = useCallback((card: CardDefinition) => {
+    setProfile((prev) => {
+      const next = SaveManager.importCustomCard(prev, card);
+      CardManager.registerCustomCards(next.customImportedCards ?? []);
+      return next;
+    });
+  }, []);
+
+  const handleRemoveImportedCard = useCallback((cardId: string) => {
+    setProfile((prev) => {
+      const next = SaveManager.removeCustomCard(prev, cardId);
+      CardManager.registerCustomCards(next.customImportedCards ?? []);
+      return next;
+    });
   }, []);
 
   const handleSaveDeck = useCallback((deck: SavedDeck) => {
@@ -335,7 +358,12 @@ export default function App() {
       )}
 
       {screen === 'LIBRARY' && (
-        <LibraryView profile={profile} onClose={() => setScreen('TITLE')} />
+        <LibraryView
+          profile={profile}
+          onImportCard={handleImportCard}
+          onRemoveImportedCard={handleRemoveImportedCard}
+          onClose={() => setScreen('TITLE')}
+        />
       )}
 
       {screen === 'FREE_MODE' && (
