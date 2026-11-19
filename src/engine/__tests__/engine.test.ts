@@ -280,3 +280,84 @@ test('IA táctica y persistencia SaveManager: ejecuta jugadas válidas y guarda 
   assert.equal(reloaded.history.length, 1);
   assert.ok(reloaded.completedStageIds.includes('stage_1_novice'));
 });
+
+test('Regresión IA: no entra en bucle infinito con 5/5 zonas Mágicas/Trampas ocupadas', () => {
+  let state = createDeterministicDuel(
+    ['m_ebony_knight', 'm_valiant_blade', 'm_tuner_squire', 'm_dawn_mage', 'm_crimson_elemental'],
+    ['s_arcane_greed', 't_mirror_force', 't_magic_cylinder', 't_bottomless_trap', 't_fiendish_chain', 't_solemn_judgment']
+  );
+  state = DuelManager.endTurn(state); // Opponent Turn 2
+
+  // Fill all 5 opponent Spell/Trap zones
+  for (let i = 0; i < 5; i++) {
+    const dummy = state.opponent.deck.shift()!;
+    dummy.location = 'SPELL_TRAP';
+    dummy.zoneIndex = i;
+    dummy.faceUp = false;
+    dummy.turnPlaced = 1;
+    state.opponent.spellsTraps[i] = dummy;
+  }
+
+  // Ensure Pot of Greed is in AI hand
+  const pot = state.opponent.hand.find((c) => c.cardId === 's_arcane_greed')!;
+  assert.ok(pot, 's_arcane_greed should be in opponent hand');
+
+  const canActivate = EffectManager.canActivateEffect(
+    state,
+    'opponent',
+    pot,
+    CardManager.getDef(pot.cardId).effects[0]
+  );
+  assert.equal(canActivate.allowed, false);
+
+  // Run AI turn loop with a strict step cap to prove termination
+  let steps = 0;
+  while (state.activePlayer === 'opponent' && !state.winner && steps < 15) {
+    const act = AIController.computeNextAction(state);
+    if (!act) break;
+    state = act.apply(state);
+    steps++;
+  }
+  assert.ok(steps < 15, `AI should finish turn cleanly, took ${steps} steps`);
+  assert.equal(state.activePlayer, 'player');
+});
+
+test('Regresión Combate: impide atacar desde Cementerio y aborta si una trampa destruye al atacante', () => {
+  let state = createDeterministicDuel(
+    ['m_ebony_knight', 'm_valiant_blade', 'm_tuner_squire', 'm_dawn_mage', 'm_crimson_elemental'],
+    ['t_mirror_force', 'm_stone_sentinel', 'm_valiant_blade', 'm_tuner_squire', 'm_dawn_mage']
+  );
+  state = DuelManager.endTurn(state); // Turn 2 Opp
+  state = DuelManager.endTurn(state); // Turn 3 Player
+
+  // Place a monster in player's GY (faceUp ATK as it would be after destruction)
+  const gyMon = state.player.hand.shift()!;
+  SummonManager.placeMonsterOnField(state, 'player', gyMon, 'ATK', true, false);
+  SummonManager.sendToGraveyard(state, gyMon);
+
+  // Place a live attacker on field
+  const attacker = state.player.hand.shift()!;
+  SummonManager.placeMonsterOnField(state, 'player', attacker, 'ATK', true, false);
+
+  // Set Mirror Force for opponent on Turn 1 so it is active on Turn 3
+  const mirrorForce = state.opponent.hand.find((c) => c.cardId === 't_mirror_force')!;
+  state.opponent.hand = state.opponent.hand.filter((c) => c.uid !== mirrorForce.uid);
+  mirrorForce.location = 'SPELL_TRAP';
+  mirrorForce.zoneIndex = 0;
+  mirrorForce.faceUp = false;
+  mirrorForce.turnPlaced = 1;
+  state.opponent.spellsTraps[0] = mirrorForce;
+
+  state = DuelManager.advancePhase(state, 'BATTLE').state;
+
+  // 1. Attacking from GY must be rejected
+  const gyCheck = BattleManager.canDeclareAttack(state, gyMon.uid);
+  assert.equal(gyCheck.allowed, false);
+
+  // 2. Attacking into Mirror Force destroys attacker and deals 0 LP damage
+  const initialOppLp = state.opponent.lp;
+  state = DuelManager.declareAttack(state, 'player', attacker.uid).state;
+  assert.equal(state.opponent.lp, initialOppLp);
+  assert.equal(CardManager.findInstance(state, attacker.uid)?.location, 'GRAVEYARD');
+});
+

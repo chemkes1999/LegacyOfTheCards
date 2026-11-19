@@ -473,7 +473,14 @@ export class DuelManager {
       const chosen = attackTraps[0];
       ChainManager.pushLink(state, 'opponent', chosen.card.uid, chosen.eff);
       const { attackNegated } = EffectManager.resolveChainStack(state);
-      if (attackNegated) return { state };
+      if (attackNegated || state.winner) return { state };
+      const attackerStillOnField = CardManager.findInstance(state, attackerUid);
+      if (
+        !attackerStillOnField ||
+        (attackerStillOnField.location !== 'MONSTER' && attackerStillOnField.location !== 'EXTRA_MONSTER')
+      ) {
+        return { state };
+      }
     }
 
     BattleManager.executeAttack(state, attackerUid, targetUid);

@@ -28,7 +28,11 @@ export class BattleManager {
     }
 
     const attacker = CardManager.findInstance(state, attackerUid);
-    if (!attacker || attacker.controller !== state.activePlayer) {
+    if (
+      !attacker ||
+      attacker.controller !== state.activePlayer ||
+      (attacker.location !== 'MONSTER' && attacker.location !== 'EXTRA_MONSTER')
+    ) {
       return { allowed: false, reason: 'Atacante inválido.' };
     }
     if (!attacker.faceUp || attacker.position !== 'ATK') {

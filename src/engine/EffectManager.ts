@@ -27,6 +27,15 @@ export class EffectManager {
       return { allowed: false, reason: 'Efecto ya usado este turno.' };
     }
 
+    if (
+      card.location === 'HAND' &&
+      def.category === 'SPELL' &&
+      def.subtype !== 'field' &&
+      !ps.spellsTraps.some((s) => s === null)
+    ) {
+      return { allowed: false, reason: 'Zona de Mágicas y Trampas llena.' };
+    }
+
     if (effect.trigger === 'CONTINUOUS') {
       // Field/Continuous spells just need activation placement
       return { allowed: true };
@@ -269,6 +278,14 @@ export class EffectManager {
             SummonManager.sendToGraveyard(state, oppPs.fieldZone);
             count++;
           }
+          if (oppPs.pendulumLeft) {
+            SummonManager.sendToGraveyard(state, oppPs.pendulumLeft);
+            count++;
+          }
+          if (oppPs.pendulumRight) {
+            SummonManager.sendToGraveyard(state, oppPs.pendulumRight);
+            count++;
+          }
           TurnManager.addLog(state, controller, `${def.name} destruye ${count} Mágica(s)/Trampa(s) de ${oppPs.name}.`, 'effect');
           break;
         }
@@ -290,10 +307,11 @@ export class EffectManager {
               sourceCard.equippedToUid = target.uid;
             }
             const tDef = CardManager.getDef(target.cardId);
+            const delta = op.atkDelta ?? 0;
             TurnManager.addLog(
               state,
               controller,
-              `${tDef.name} modifica ATK ${op.atkDelta ?? 0 >= 0 ? '+' : ''}${op.atkDelta ?? 0}.`,
+              `${tDef.name} modifica ATK ${delta >= 0 ? '+' : ''}${delta}.`,
               'effect'
             );
           }
