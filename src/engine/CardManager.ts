@@ -53,21 +53,55 @@ export const ATTRIBUTE_LABELS_ES: Record<Attribute, string> = {
 export class CardManager {
   private static customCards: CardDefinition[] = [];
   private static customCardMap: Record<string, CardDefinition> = {};
+  private static bulkCards: CardDefinition[] = [];
+  private static bulkCardMap: Record<string, CardDefinition> = {};
+  private static cachedAll: CardDefinition[] | null = null;
 
   static registerCustomCards(cards: CardDefinition[]): void {
     this.customCards = [...cards];
     this.customCardMap = Object.fromEntries(cards.map((c) => [c.id, c]));
+    this.cachedAll = null;
+  }
+
+  static registerBulkCatalog(cards: CardDefinition[]): void {
+    this.bulkCards = cards;
+    this.bulkCardMap = Object.fromEntries(cards.map((c) => [c.id, c]));
+    this.cachedAll = null;
+  }
+
+  static getBulkCount(): number {
+    return this.bulkCards.length;
   }
 
   static getAll(): CardDefinition[] {
-    if (this.customCards.length === 0) return CARD_CATALOG;
-    const seen = new Set(CARD_CATALOG.map((c) => c.id));
-    const extras = this.customCards.filter((c) => !seen.has(c.id));
-    return [...CARD_CATALOG, ...extras];
+    if (this.cachedAll) return this.cachedAll;
+    if (this.customCards.length === 0 && this.bulkCards.length === 0) {
+      return CARD_CATALOG;
+    }
+
+    const seenIds = new Set<string>();
+    const seenYgoIds = new Set<number>();
+    const merged: CardDefinition[] = [];
+
+    const pushUnique = (list: CardDefinition[]) => {
+      for (const c of list) {
+        if (seenIds.has(c.id)) continue;
+        if (c.ygoprodeckId !== undefined && seenYgoIds.has(c.ygoprodeckId)) continue;
+        seenIds.add(c.id);
+        if (c.ygoprodeckId !== undefined) seenYgoIds.add(c.ygoprodeckId);
+        merged.push(c);
+      }
+    };
+
+    pushUnique(CARD_CATALOG);
+    pushUnique(this.customCards);
+    pushUnique(this.bulkCards);
+    this.cachedAll = merged;
+    return merged;
   }
 
   static getDef(cardId: string): CardDefinition {
-    const def = this.customCardMap[cardId] ?? CARD_BY_ID[cardId];
+    const def = this.customCardMap[cardId] ?? CARD_BY_ID[cardId] ?? this.bulkCardMap[cardId];
     if (!def) {
       throw new Error(`Carta desconocida en el registro: ${cardId}`);
     }

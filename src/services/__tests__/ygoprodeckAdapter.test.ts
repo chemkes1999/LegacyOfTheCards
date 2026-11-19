@@ -155,4 +155,36 @@ test('inferCardEffectsFromDescription y registro dinámico de cartas importadas'
   assert.equal(CardManager.getDef(imported.id).name, 'Cyber Dragon');
   assert.equal(SaveManager.load(mockStorage).customImportedCards?.length, 1);
   CardManager.registerCustomCards([]);
+
+  // Bulk catalog registration & deduplication against curated ygoprodeckId (89631139 = Blue-Eyes)
+  const bulkDuplicateBlueEyes = mapYgoCardToDefinition({
+    id: 89631139,
+    name: 'Blue-Eyes White Dragon',
+    type: 'Normal Monster',
+    frameType: 'normal',
+    desc: 'Duplicate from bulk',
+    atk: 3000,
+    def: 2500,
+    level: 8,
+    race: 'Dragon',
+    attribute: 'LIGHT',
+  });
+  const bulkUnique = mapYgoCardToDefinition({
+    id: 33396948,
+    name: 'Exodia the Forbidden One',
+    type: 'Effect Monster',
+    frameType: 'effect',
+    desc: 'Exodia',
+    atk: 1000,
+    def: 1000,
+    level: 3,
+    race: 'Spellcaster',
+    attribute: 'DARK',
+  });
+  const beforeCount = CardManager.getAll().length;
+  CardManager.registerBulkCatalog([bulkDuplicateBlueEyes, bulkUnique]);
+  assert.equal(CardManager.getAll().length, beforeCount + 1);
+  assert.equal(CardManager.getDef(bulkUnique.id).name, 'Exodia the Forbidden One');
+  CardManager.registerBulkCatalog([]);
+  assert.equal(CardManager.getAll().length, beforeCount);
 });

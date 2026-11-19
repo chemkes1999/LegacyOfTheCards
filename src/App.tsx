@@ -10,6 +10,12 @@ import { CardManager } from './engine/CardManager';
 import { DuelManager } from './engine/DuelManager';
 import { GameManager } from './engine/GameManager';
 import { SaveManager } from './engine/SaveManager';
+import {
+  clearFullCatalogFromDb,
+  loadFullCatalogFromDb,
+  saveFullCatalogToDb,
+} from './services/cardCatalogDb';
+import { fetchAllOfficialCards } from './services/ygoprodeckApi';
 import { DuelArena3D, ProjectedBadge, ZoneClickPayload } from './three/DuelArena3D';
 import {
   AIDifficulty,
@@ -35,8 +41,25 @@ export default function App() {
     CardManager.registerCustomCards(loaded.customImportedCards ?? []);
     return loaded;
   });
+  const [catalogVersion, setCatalogVersion] = useState(0);
+  const [bulkCatalogCount, setBulkCatalogCount] = useState(0);
+  const [bulkSyncStatus, setBulkSyncStatus] = useState<string | null>(null);
   const [screen, setScreen] = useState<ScreenView>('TITLE');
   const [selectedDifficulty, setSelectedDifficulty] = useState<AIDifficulty>('NORMAL');
+
+  // Load previously synced 13,000+ YGOPRODeck catalog from IndexedDB on startup
+  useEffect(() => {
+    let active = true;
+    loadFullCatalogFromDb().then((cards) => {
+      if (!active || cards.length === 0) return;
+      CardManager.registerBulkCatalog(cards);
+      setBulkCatalogCount(cards.length);
+      setCatalogVersion((v) => v + 1);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const [duel, setDuel] = useState<DuelState | null>(null);
   const [paused, setPaused] = useState(false);
@@ -267,6 +290,30 @@ export default function App() {
     });
   }, []);
 
+  const handleSyncFullCatalog = useCallback(async () => {
+    if (bulkSyncStatus) return;
+    try {
+      setBulkSyncStatus('Iniciando descarga...');
+      const cards = await fetchAllOfficialCards((status) => setBulkSyncStatus(status));
+      setBulkSyncStatus(`Guardando ${cards.length.toLocaleString()} cartas en IndexedDB...`);
+      await saveFullCatalogToDb(cards);
+      CardManager.registerBulkCatalog(cards);
+      setBulkCatalogCount(cards.length);
+      setCatalogVersion((v) => v + 1);
+      setBulkSyncStatus(null);
+    } catch (err) {
+      setBulkSyncStatus(null);
+      throw err;
+    }
+  }, [bulkSyncStatus]);
+
+  const handleClearFullCatalog = useCallback(async () => {
+    await clearFullCatalogFromDb();
+    CardManager.registerBulkCatalog([]);
+    setBulkCatalogCount(0);
+    setCatalogVersion((v) => v + 1);
+  }, []);
+
   const handleSaveDeck = useCallback((deck: SavedDeck) => {
     setProfile((prev) => SaveManager.upsertDeck(prev, deck));
   }, []);
@@ -350,6 +397,7 @@ export default function App() {
       {screen === 'DECK_BUILDER' && (
         <DeckBuilderView
           profile={profile}
+          catalogVersion={catalogVersion}
           onSaveDeck={handleSaveDeck}
           onSetActiveDeck={handleSetActiveDeck}
           onDeleteDeck={handleDeleteDeck}
@@ -360,6 +408,11 @@ export default function App() {
       {screen === 'LIBRARY' && (
         <LibraryView
           profile={profile}
+          catalogVersion={catalogVersion}
+          bulkCatalogCount={bulkCatalogCount}
+          bulkSyncStatus={bulkSyncStatus}
+          onSyncFullCatalog={handleSyncFullCatalog}
+          onClearFullCatalog={handleClearFullCatalog}
           onImportCard={handleImportCard}
           onRemoveImportedCard={handleRemoveImportedCard}
           onClose={() => setScreen('TITLE')}

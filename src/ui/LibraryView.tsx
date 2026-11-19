@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  Database,
   Download,
   Globe,
   Loader2,
@@ -21,15 +22,26 @@ import { CardArtRenderer } from './CardArtRenderer';
 
 interface LibraryViewProps {
   profile: PlayerProfileSave;
+  catalogVersion: number;
+  bulkCatalogCount: number;
+  bulkSyncStatus: string | null;
+  onSyncFullCatalog: () => Promise<void>;
+  onClearFullCatalog: () => Promise<void>;
   onImportCard: (card: CardDefinition) => void;
   onRemoveImportedCard: (cardId: string) => void;
   onClose: () => void;
 }
 
-const PAGE_SIZE = 24;
+const YGO_PAGE_SIZE = 24;
+const LOCAL_PAGE_SIZE = 40;
 
 export const LibraryView: React.FC<LibraryViewProps> = ({
   profile,
+  catalogVersion,
+  bulkCatalogCount,
+  bulkSyncStatus,
+  onSyncFullCatalog,
+  onClearFullCatalog,
   onImportCard,
   onRemoveImportedCard,
   onClose,
@@ -38,13 +50,14 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
 
   const allPlayable = useMemo(
     () => CardManager.getAll(),
-    [profile.customImportedCards]
+    [profile.customImportedCards, catalogVersion]
   );
 
-  // Local playable catalog filters
+  // Local playable catalog filters & pagination
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<'ALL' | CardCategory>('ALL');
   const [attribute, setAttribute] = useState<'ALL' | Attribute>('ALL');
+  const [localPage, setLocalPage] = useState(0);
   const [selectedCard, setSelectedCard] = useState<CardDefinition>(allPlayable[0]);
   const [importNotice, setImportNotice] = useState<string | null>(null);
 
@@ -85,6 +98,16 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
     });
   }, [allPlayable, query, category, attribute]);
 
+  useEffect(() => {
+    setLocalPage(0);
+  }, [query, category, attribute, catalogVersion]);
+
+  const localTotalPages = Math.max(1, Math.ceil(filteredLocal.length / LOCAL_PAGE_SIZE));
+  const pagedLocal = useMemo(() => {
+    const start = localPage * LOCAL_PAGE_SIZE;
+    return filteredLocal.slice(start, start + LOCAL_PAGE_SIZE);
+  }, [filteredLocal, localPage]);
+
   // Debounced live fetch from YGOPRODeck when on YGOPRODECK tab
   useEffect(() => {
     if (tab !== 'YGOPRODECK') return;
@@ -100,7 +123,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
             type: ygoType,
             attribute: ygoAttr,
             language: ygoLang,
-            num: PAGE_SIZE,
+            num: YGO_PAGE_SIZE,
             offset: ygoOffset,
           },
           controller.signal
@@ -126,6 +149,11 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
     };
   }, [tab, ygoQuery, ygoType, ygoAttr, ygoLang, ygoOffset]);
 
+  const flashNotice = (msg: string) => {
+    setImportNotice(msg);
+    window.setTimeout(() => setImportNotice((p) => (p === msg ? null : p)), 4200);
+  };
+
   const handleImportForDuels = (card: CardDefinition) => {
     const inferredEffects =
       card.effects.length > 0 ? card.effects : inferCardEffectsFromDescription(card);
@@ -141,12 +169,24 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
         : inferredEffects.length > 0
         ? `con ${inferredEffects[0].operations.length} operación(es) de efecto auto-detectadas`
         : 'jugable por estadísticas base (efecto complejo no mapeado)';
-    const msg = `"${enriched.name}" importada para Duelos y Mazos — ${detail}.`;
-    setImportNotice(msg);
-    window.setTimeout(() => setImportNotice((p) => (p === msg ? null : p)), 3800);
+    flashNotice(`"${enriched.name}" importada para Duelos y Mazos — ${detail}.`);
   };
 
-  const activeList = tab === 'PLAYABLE' ? filteredLocal : ygoCards;
+  const handleBulkImportClick = async () => {
+    try {
+      await onSyncFullCatalog();
+      flashNotice('¡Catálogo completo de YGOPRODeck importado y guardado en IndexedDB! Ya puedes usar todas las cartas en Mazos y Duelos.');
+    } catch (err) {
+      flashNotice((err as Error).message || 'Error al importar el catálogo completo.');
+    }
+  };
+
+  const handleClearBulkClick = async () => {
+    await onClearFullCatalog();
+    flashNotice('Catálogo masivo eliminado de IndexedDB.');
+  };
+
+  const activeList = tab === 'PLAYABLE' ? pagedLocal : ygoCards;
   const selectedIsBuiltIn = Boolean(CARD_BY_ID[selectedCard.id]);
   const selectedIsImported = customImportedIds.has(selectedCard.id);
   const selectedAlreadyPlayable =
@@ -157,7 +197,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   return (
     <div className="fixed inset-0 z-40 flex flex-col bg-[#070a12]/95 p-4 sm:p-6 overflow-hidden">
       {/* Header */}
-      <div className="mx-auto w-full max-w-7xl flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4 shrink-0">
+      <div className="mx-auto w-full max-w-7xl flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4 shrink-0">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-300">
             <BookOpen className="h-5 w-5" />
@@ -166,13 +206,41 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
             <h2 className="font-display text-2xl font-extrabold text-white">Biblioteca de Cartas</h2>
             <p className="text-xs text-slate-400">
               {tab === 'PLAYABLE'
-                ? `${filteredLocal.length} de ${allPlayable.length} cartas jugables (${profile.customImportedCards?.length ?? 0} importadas por ti)`
-                : `${ygoTotal.toLocaleString()} resultados oficiales en YGOPRODeck API v7 — importa cualquiera para duelos`}
+                ? `${filteredLocal.length.toLocaleString()} de ${allPlayable.length.toLocaleString()} cartas jugables`
+                : `${ygoTotal.toLocaleString()} resultados oficiales en YGOPRODeck API v7`}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Bulk Import All Button */}
+          {bulkCatalogCount === 0 ? (
+            <button
+              type="button"
+              disabled={Boolean(bulkSyncStatus)}
+              onClick={handleBulkImportClick}
+              className="flex items-center gap-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 disabled:opacity-60 px-3 py-2 text-xs font-bold text-slate-950 transition-colors cursor-pointer"
+            >
+              {bulkSyncStatus ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Database className="h-3.5 w-3.5" />
+              )}
+              <span>{bulkSyncStatus ? 'Importando...' : 'Importar Todas (13,000+)'}</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleClearBulkClick}
+              title="Eliminar catálogo masivo guardado en IndexedDB"
+              className="flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-950/50 hover:bg-rose-950/70 hover:border-rose-500/50 hover:text-rose-200 px-3 py-2 text-xs font-semibold text-emerald-300 transition-colors cursor-pointer"
+            >
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              <span>{bulkCatalogCount.toLocaleString()} en IndexedDB</span>
+              <Trash2 className="h-3.5 w-3.5 ml-1 opacity-75" />
+            </button>
+          )}
+
           {/* Tab Switcher */}
           <div className="flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900 p-1">
             <button
@@ -184,7 +252,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                   : 'text-slate-300 hover:text-white'
               }`}
             >
-              Catálogo Jugable ({allPlayable.length})
+              Catálogo Jugable ({allPlayable.length.toLocaleString()})
             </button>
             <button
               type="button"
@@ -196,7 +264,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
               }`}
             >
               <Globe className="h-3.5 w-3.5" />
-              <span>YGOPRODeck (Todas)</span>
+              <span>YGOPRODeck (En vivo)</span>
             </button>
           </div>
 
@@ -210,6 +278,13 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
           </button>
         </div>
       </div>
+
+      {bulkSyncStatus && (
+        <div className="mx-auto mt-2 w-full max-w-7xl flex items-center gap-2 rounded-lg border border-cyan-500/50 bg-cyan-950/60 px-3 py-2 text-xs text-cyan-200 shrink-0">
+          <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+          <span>{bulkSyncStatus}</span>
+        </div>
+      )}
 
       {importNotice && (
         <div className="mx-auto mt-2 w-full max-w-7xl rounded-lg border border-emerald-500/50 bg-emerald-950/70 px-3 py-2 text-xs text-emerald-200 shrink-0">
@@ -395,24 +470,50 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
             )}
           </div>
 
-          {tab === 'YGOPRODECK' && !ygoLoading && ygoTotal > PAGE_SIZE && (
+          {tab === 'PLAYABLE' && localTotalPages > 1 && (
             <div className="flex items-center justify-between border-t border-slate-800 pt-3 mt-2 text-xs shrink-0">
               <button
                 type="button"
-                disabled={ygoOffset === 0}
-                onClick={() => setYgoOffset((o) => Math.max(0, o - PAGE_SIZE))}
+                disabled={localPage === 0}
+                onClick={() => setLocalPage((p) => Math.max(0, p - 1))}
                 className="flex items-center gap-1 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-35 px-3 py-1.5 text-slate-100 cursor-pointer"
               >
                 <ChevronLeft className="h-4 w-4" />
                 <span>Anterior</span>
               </button>
               <span className="font-mono-num text-slate-400">
-                Mostrando {ygoOffset + 1}–{Math.min(ygoOffset + PAGE_SIZE, ygoTotal)} de {ygoTotal}
+                Página {localPage + 1} de {localTotalPages} ({filteredLocal.length.toLocaleString()} cartas)
+              </span>
+              <button
+                type="button"
+                disabled={localPage + 1 >= localTotalPages}
+                onClick={() => setLocalPage((p) => Math.min(localTotalPages - 1, p + 1))}
+                className="flex items-center gap-1 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-35 px-3 py-1.5 text-slate-100 cursor-pointer"
+              >
+                <span>Siguiente</span>
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+
+          {tab === 'YGOPRODECK' && !ygoLoading && ygoTotal > YGO_PAGE_SIZE && (
+            <div className="flex items-center justify-between border-t border-slate-800 pt-3 mt-2 text-xs shrink-0">
+              <button
+                type="button"
+                disabled={ygoOffset === 0}
+                onClick={() => setYgoOffset((o) => Math.max(0, o - YGO_PAGE_SIZE))}
+                className="flex items-center gap-1 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-35 px-3 py-1.5 text-slate-100 cursor-pointer"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                <span>Anterior</span>
+              </button>
+              <span className="font-mono-num text-slate-400">
+                Mostrando {ygoOffset + 1}–{Math.min(ygoOffset + YGO_PAGE_SIZE, ygoTotal)} de {ygoTotal}
               </span>
               <button
                 type="button"
                 disabled={!ygoHasMore}
-                onClick={() => setYgoOffset((o) => o + PAGE_SIZE)}
+                onClick={() => setYgoOffset((o) => o + YGO_PAGE_SIZE)}
                 className="flex items-center gap-1 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-35 px-3 py-1.5 text-slate-100 cursor-pointer"
               >
                 <span>Siguiente</span>
@@ -507,7 +608,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
           ) : (
             <div className="flex items-center justify-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-950/30 py-2 text-xs font-semibold text-amber-300">
               <Sparkles className="h-4 w-4" />
-              <span>Ya incluida en el catálogo jugable</span>
+              <span>Disponible en el catálogo jugable</span>
             </div>
           )}
 
@@ -534,7 +635,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
               <>
                 <span>Copias en tu colección</span>
                 <span className="font-mono-num font-bold text-emerald-400">
-                  {profile.unlockedCardIds[selectedCard.id] ?? 0} / 3
+                  {profile.unlockedCardIds[selectedCard.id] ?? 3} / 3
                 </span>
               </>
             )}

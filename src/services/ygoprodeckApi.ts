@@ -106,3 +106,33 @@ export async function searchOfficialCards(
   writeCache(cacheKey, payload);
   return payload;
 }
+
+export async function fetchAllOfficialCards(
+  onProgress?: (status: string) => void,
+  signal?: AbortSignal
+): Promise<CardDefinition[]> {
+  const { inferCardEffectsFromDescription } = await import('./ygoprodeckEffectParser');
+
+  onProgress?.('Descargando catálogo completo desde YGOPRODeck (~15 MB)...');
+  const res = await fetch(API_BASE, { signal });
+  if (!res.ok) {
+    throw new Error(`Error al descargar el catálogo completo (HTTP ${res.status})`);
+  }
+
+  onProgress?.('Procesando cartas y detectando efectos jugables...');
+  const json = (await res.json()) as { data?: YgoApiCard[] };
+  const rawList = json.data ?? [];
+
+  const result: CardDefinition[] = [];
+  for (const raw of rawList) {
+    const t = (raw.type || '').toLowerCase();
+    // Skip non-deck cards such as Tokens and Speed Duel Skill Cards
+    if (t.includes('token') || t.includes('skill')) continue;
+
+    const base = mapYgoCardToDefinition(raw);
+    const effects = inferCardEffectsFromDescription(base);
+    result.push(effects.length > 0 ? { ...base, effects } : base);
+  }
+
+  return result;
+}

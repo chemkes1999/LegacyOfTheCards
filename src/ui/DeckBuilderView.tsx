@@ -1,8 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   AlertCircle,
   ArrowLeft,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   CopyPlus,
   Layers,
   Minus,
@@ -12,7 +14,6 @@ import {
   Star,
   Trash2,
 } from 'lucide-react';
-import { CARD_CATALOG } from '../data/cards';
 import { BALANCED_STARTER_MAIN, STARTER_EXTRA_DECK } from '../data/decks';
 import { CardManager } from '../engine/CardManager';
 import {
@@ -27,14 +28,18 @@ import { CardArtRenderer } from './CardArtRenderer';
 
 interface DeckBuilderViewProps {
   profile: PlayerProfileSave;
+  catalogVersion: number;
   onSaveDeck: (deck: SavedDeck) => void;
   onSetActiveDeck: (deckId: string) => void;
   onDeleteDeck: (deckId: string) => void;
   onClose: () => void;
 }
 
+const DECK_CATALOG_PAGE_SIZE = 40;
+
 export const DeckBuilderView: React.FC<DeckBuilderViewProps> = ({
   profile,
+  catalogVersion,
   onSaveDeck,
   onSetActiveDeck,
   onDeleteDeck,
@@ -50,6 +55,7 @@ export const DeckBuilderView: React.FC<DeckBuilderViewProps> = ({
   }));
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<'ALL' | CardCategory>('ALL');
+  const [page, setPage] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
 
   const validation = useMemo(() => DeckManager.validateDeck(editingDeck), [editingDeck]);
@@ -57,7 +63,7 @@ export const DeckBuilderView: React.FC<DeckBuilderViewProps> = ({
 
   const allCards = useMemo(
     () => CardManager.getAll(),
-    [profile.customImportedCards]
+    [profile.customImportedCards, catalogVersion]
   );
 
   const filteredCatalog = useMemo(() => {
@@ -70,6 +76,16 @@ export const DeckBuilderView: React.FC<DeckBuilderViewProps> = ({
       return true;
     });
   }, [allCards, query, category]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [query, category, catalogVersion]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredCatalog.length / DECK_CATALOG_PAGE_SIZE));
+  const pagedCatalog = useMemo(() => {
+    const start = page * DECK_CATALOG_PAGE_SIZE;
+    return filteredCatalog.slice(start, start + DECK_CATALOG_PAGE_SIZE);
+  }, [filteredCatalog, page]);
 
   const groupedMain = useMemo(() => {
     const counts = new Map<string, number>();
@@ -269,7 +285,7 @@ export const DeckBuilderView: React.FC<DeckBuilderViewProps> = ({
 
           <div className="flex-1 overflow-y-auto pr-1">
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pb-4">
-              {filteredCatalog.map((card) => {
+              {pagedCatalog.map((card) => {
                 const inDeck = DeckManager.getCopyCount(editingDeck, card.id);
                 const maxed = inDeck >= MAX_COPIES_PER_CARD;
                 return (
@@ -314,6 +330,32 @@ export const DeckBuilderView: React.FC<DeckBuilderViewProps> = ({
               })}
             </div>
           </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between border-t border-slate-800 pt-2 text-xs shrink-0">
+              <button
+                type="button"
+                disabled={page === 0}
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                className="flex items-center gap-1 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-35 px-3 py-1.5 text-slate-100 cursor-pointer"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                <span>Anterior</span>
+              </button>
+              <span className="font-mono-num text-slate-400">
+                Página {page + 1} de {totalPages} ({filteredCatalog.length.toLocaleString()} cartas)
+              </span>
+              <button
+                type="button"
+                disabled={page + 1 >= totalPages}
+                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                className="flex items-center gap-1 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-35 px-3 py-1.5 text-slate-100 cursor-pointer"
+              >
+                <span>Siguiente</span>
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Right: Deck Editor & Validation */}

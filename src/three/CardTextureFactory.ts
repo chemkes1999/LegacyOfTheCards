@@ -192,73 +192,141 @@ export class CardTextureFactory {
           ? FRAME_COLORS.trap
           : FRAME_COLORS[card.subtype];
 
-      const frameGrad = ctx.createLinearGradient(0, 0, 256, 372);
-      frameGrad.addColorStop(0, palette[0]);
-      frameGrad.addColorStop(1, palette[1]);
-      ctx.fillStyle = frameGrad;
+      // Outer dark TCG card border
+      ctx.fillStyle = '#23252c';
       ctx.fillRect(0, 0, 256, 372);
 
-      // Outer border
-      ctx.strokeStyle = '#0c0f16';
-      ctx.lineWidth = 8;
-      ctx.strokeRect(4, 4, 248, 364);
+      // Authentic card frame body
+      const frameGrad = ctx.createLinearGradient(0, 0, 256, 372);
+      if (card.category === 'MONSTER' && card.subtype === 'pendulum') {
+        frameGrad.addColorStop(0, '#cf7a42');
+        frameGrad.addColorStop(0.45, '#b5612e');
+        frameGrad.addColorStop(0.58, '#2b8c79');
+        frameGrad.addColorStop(1, '#166b5e');
+      } else {
+        frameGrad.addColorStop(0, palette[0]);
+        frameGrad.addColorStop(1, palette[1]);
+      }
+      ctx.fillStyle = frameGrad;
+      ctx.fillRect(8, 8, 240, 356);
 
-      // Title bar
-      ctx.fillStyle = 'rgba(10, 13, 20, 0.72)';
-      ctx.fillRect(16, 16, 224, 30);
-      ctx.strokeStyle = 'rgba(255,255,255,0.22)';
+      // Subtle inner border
+      ctx.strokeStyle = 'rgba(255,255,255,0.28)';
       ctx.lineWidth = 1.5;
-      ctx.strokeRect(16, 16, 224, 30);
+      ctx.strokeRect(10, 10, 236, 352);
 
-      ctx.fillStyle = '#f8fafc';
-      ctx.font = 'bold 13px sans-serif';
-      ctx.fillText(card.name.slice(0, 24), 22, 36);
+      // Beveled Title Bar
+      const isDarkFrame =
+        card.category !== 'MONSTER' ||
+        card.subtype === 'fusion' ||
+        card.subtype === 'xyz' ||
+        card.subtype === 'link';
+      ctx.fillStyle = isDarkFrame ? 'rgba(10, 12, 20, 0.35)' : 'rgba(255, 250, 235, 0.32)';
+      ctx.fillRect(16, 16, 224, 28);
+      ctx.strokeStyle = isDarkFrame ? 'rgba(255,255,255,0.35)' : 'rgba(60,40,15,0.45)';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(16, 16, 224, 28);
 
-      // Stars / Level bar
-      if (card.category === 'MONSTER') {
-        ctx.fillStyle = '#facc15';
-        const count = Math.min(card.level, 8);
+      ctx.fillStyle = isDarkFrame ? '#ffffff' : '#181410';
+      ctx.font = 'bold 13px Georgia, serif';
+      ctx.fillText(card.name.toUpperCase().slice(0, 22), 22, 35);
+
+      // Attribute Orb
+      const attrOrbColors: Record<string, string> = {
+        LIGHT: '#facc15',
+        DARK: '#7e22ce',
+        FIRE: '#dc2626',
+        WATER: '#0284c7',
+        WIND: '#10b981',
+        EARTH: '#a16207',
+        DIVINE: '#eab308',
+        SPELL: '#0d9488',
+        TRAP: '#be185d',
+      };
+      const orbKey = card.category === 'MONSTER' ? card.attribute ?? 'DARK' : card.category;
+      ctx.fillStyle = attrOrbColors[orbKey] ?? '#64748b';
+      ctx.beginPath();
+      ctx.arc(226, 30, 10, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Level / Rank Stars (Left-aligned black orbs for Xyz, Right-aligned red/gold orbs for others)
+      if (card.category === 'MONSTER' && card.subtype !== 'link') {
+        const isXyz = card.subtype === 'xyz';
+        const count = Math.min(card.level, 12);
         for (let i = 0; i < count; i++) {
+          const sx = isXyz ? 26 + i * 16 : 230 - i * 16;
+          ctx.fillStyle = isXyz ? '#090a0f' : '#dc2626';
           ctx.beginPath();
-          ctx.arc(230 - i * 16, 58, 5.5, 0, Math.PI * 2);
+          ctx.arc(sx, 55, 6, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#fde047';
+          ctx.lineWidth = 1.2;
+          ctx.stroke();
+          ctx.fillStyle = '#fde047';
+          ctx.beginPath();
+          ctx.arc(sx, 55, 2.3, 0, Math.PI * 2);
           ctx.fill();
         }
+      } else if (card.category !== 'MONSTER') {
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 10px Georgia, serif';
+        ctx.fillText(card.category === 'SPELL' ? '[CARTA MÁGICA]' : '[CARTA DE TRAMPA]', 130, 58);
       }
 
-      // Art box
-      const artX = 20;
-      const artY = 70;
-      const artW = 216;
-      const artH = 196;
+      // Metallic Recessed Art Box
+      const artX = 22;
+      const artY = 68;
+      const artW = 212;
+      const artH = 194;
       if (img && img.complete && img.naturalWidth > 0) {
         ctx.drawImage(img, artX, artY, artW, artH);
       } else {
         drawProceduralMotif(ctx, card, artX, artY, artW, artH);
       }
-      ctx.strokeStyle = '#0f172a';
-      ctx.lineWidth = 3;
+      ctx.strokeStyle = '#333845';
+      ctx.lineWidth = 4;
       ctx.strokeRect(artX, artY, artW, artH);
 
-      // Bottom effect/stat box
-      ctx.fillStyle = 'rgba(15, 20, 30, 0.85)';
-      ctx.fillRect(16, 276, 224, 80);
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
-      ctx.lineWidth = 1.5;
-      ctx.strokeRect(16, 276, 224, 80);
+      // Warm Parchment Lore & Stats Box
+      ctx.fillStyle = '#f3ead6';
+      ctx.fillRect(16, 272, 224, 84);
+      ctx.strokeStyle = isDarkFrame ? '#475569' : '#7c5321';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(16, 272, 224, 84);
 
-      ctx.fillStyle = '#cbd5e1';
-      ctx.font = '11px sans-serif';
-      ctx.fillText(card.description.slice(0, 34), 24, 296);
-      ctx.fillText(card.description.slice(34, 68), 24, 312);
+      ctx.fillStyle = '#1c1917';
+      ctx.font = 'bold 10px Georgia, serif';
+      const headerTxt =
+        card.category === 'MONSTER'
+          ? `[${(card.race ?? 'MONSTER').toUpperCase()} / ${card.subtype.toUpperCase()}]`
+          : `[${card.category} / ${card.subtype.toUpperCase()}]`;
+      ctx.fillText(headerTxt.slice(0, 32), 22, 286);
+
+      ctx.fillStyle = '#292524';
+      ctx.font = '10px sans-serif';
+      ctx.fillText(card.description.slice(0, 36), 22, 302);
+      ctx.fillText(card.description.slice(36, 72), 22, 316);
+
+      // Bottom Divider & ATK/DEF/LINK
+      ctx.strokeStyle = 'rgba(28, 25, 23, 0.45)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(22, 334);
+      ctx.lineTo(234, 334);
+      ctx.stroke();
 
       if (card.category === 'MONSTER') {
-        ctx.fillStyle = '#fde047';
-        ctx.font = 'bold 14px monospace';
-        ctx.fillText(`ATK ${card.atk}  /  DEF ${card.def}`, 24, 344);
+        ctx.fillStyle = '#1c1917';
+        ctx.font = 'bold 12px monospace';
+        const rightStat = card.subtype === 'link' ? `LINK-${card.level}` : `DEF/${card.def}`;
+        ctx.fillText(`ATK/${card.atk}  ${rightStat}`, 92, 349);
       } else {
-        ctx.fillStyle = '#67e8f9';
-        ctx.font = 'bold 13px sans-serif';
-        ctx.fillText(card.category === 'SPELL' ? 'CARTA MÁGICA' : 'CARTA DE TRAMPA', 24, 344);
+        ctx.fillStyle = '#0f5c4d';
+        ctx.font = 'bold 11px Georgia, serif';
+        ctx.fillText(card.category === 'SPELL' ? 'CARTA MÁGICA' : 'CARTA DE TRAMPA', 78, 349);
       }
 
       tex.needsUpdate = true;
